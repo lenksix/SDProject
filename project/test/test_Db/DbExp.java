@@ -43,9 +43,10 @@ public class DbExp {
          for(Row row: results){
             System.out.format("%s\n", row.getString("firstname"));
          }
-      }catch(NoHostAvailableException nhae){
+      }
+      catch(NoHostAvailableException nhae){
          nhae.printStackTrace();
-     }
+      }
       catch(NullPointerException npe){
     	  npe.printStackTrace();
       }
