@@ -1,0 +1,120 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>trial2</groupId>
+  <artifactId>trial2</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>com.datastax.cassandra</groupId>
+  		<artifactId>cassandra-driver-core</artifactId>
+  		<version>3.6.0</version>
+	</dependency>
+	<dependency>
+  		<groupId>com.datastax.cassandra</groupId>
+  		<artifactId>cassandra-driver-mapping</artifactId>
+  		<version>3.6.0</version>
+	</dependency>
+	<dependency>
+  		<groupId>com.datastax.cassandra</groupId>
+  		<artifactId>cassandra-driver-extras</artifactId>
+  		<version>3.6.0</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/com.google.guava/guava -->
+	<dependency>
+    	<groupId>com.google.guava</groupId>
+    	<artifactId>guava</artifactId>
+    	<version>19.0</version>
+	</dependency>
+	
+	
+	<!-- https://mvnrepository.com/artifact/com.codahale.metrics/metrics-core -->
+	<dependency>
+    	<groupId>com.codahale.metrics</groupId>
+    	<artifactId>metrics-core</artifactId>
+    	<version>3.0.2</version>
+	</dependency>
+	
+	
+
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.21</version> <!-- or use LATEST -->
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.7.21</version> <!-- or use LATEST -->
+    </dependency>
+    
+    <!--OPTIONAL https://mvnrepository.com/artifact/org.slf4j/jcl-over-slf4j -->
+	<dependency>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>jcl-over-slf4j</artifactId>
+    	<version>1.7.25</version>
+	</dependency>
+	
+	<!--OPTIONAL https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j -->
+	<dependency>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>jul-to-slf4j</artifactId>
+    	<version>1.7.25</version>
+	</dependency>
+    
+    <!-- TRIAL https://mvnrepository.com/artifact/io.netty/netty-all -->
+	<dependency>
+    	<groupId>io.netty</groupId>
+    	<artifactId>netty-all</artifactId>
+    	<version>4.1.32.Final</version>
+	</dependency> 
+	
+	<!--TRANSPORT not found so added it
+	 https://mvnrepository.com/artifact/io.netty/netty-transport-native-epoll -->
+	<dependency>
+    	<groupId>io.netty</groupId>
+    	<artifactId>netty-transport-native-epoll</artifactId>
+    	<version>4.1.32.Final</version>
+	</dependency>
+	
+    
+    <!-- OPTIONAL https://mvnrepository.com/artifact/org.slf4j/osgi-over-slf4j -->
+	<dependency>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>osgi-over-slf4j</artifactId>
+    	<version>1.7.25</version>
+	</dependency>
+	<!-- OPTIONAL https://mvnrepository.com/artifact/org.slf4j/slf4j-jdk14 -->
+	<dependency>
+    	<groupId>org.slf4j</groupId>
+    	<artifactId>slf4j-jdk14</artifactId>
+    	<version>1.7.21</version>
+    	<scope>test</scope>
+	</dependency>
+	
+
+	
+	
+	
+	
+  </dependencies>
+  <build>
+   <!--  <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.5.0.Final</version>
+      </extension> 
+    </extensions>-->
+    <sourceDirectory>src</sourceDirectory>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <source/>
+          <target/>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
