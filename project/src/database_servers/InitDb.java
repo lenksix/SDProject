@@ -11,7 +11,8 @@ public class InitDb {
       Cluster cluster;
       Session session;
       
-      try {
+      try 
+      {
          cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
          session = cluster.connect();
          
@@ -26,8 +27,8 @@ public class InitDb {
          session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
                + "id_channel uuid,"
                + "channel_name text,"
-               + "vids map<text,text>, " //where map is <name_video, url>
-               + "PRIMARY KEY(id_channel, channel_name));");  
+               + "vids map<text,text>, " //where map is <url, path>
+               + "PRIMARY KEY(channel_name, id_channel));");  
       }
       catch(NoHostAvailableException nhae) {
          System.out.println("Build failed: <"+ nhae.getMessage() +">");
@@ -36,5 +37,5 @@ public class InitDb {
       catch(com.datastax.driver.core.exceptions.SyntaxError Dse) {
          Dse.printStackTrace();
       }
-   }
+   } 
 }
