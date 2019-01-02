@@ -5,7 +5,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /* creates the table we need for querying the urls */
-public class InitDb {
+class InitDb {
 
    public static void main(String[] args) {
       Cluster cluster;
@@ -25,10 +25,10 @@ public class InitDb {
          session.execute("USE streaming;");
          //Create the table 
          session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
-               + "id_channel uuid,"
+               //+ "id_channel uuid,"
                + "channel_name text,"
                + "vids map<text,text>, " //where map is <url, path>
-               + "PRIMARY KEY(channel_name, id_channel));");  
+               + "PRIMARY KEY(channel_name));");  
       }
       catch(NoHostAvailableException nhae) {
          System.out.println("Build failed: <"+ nhae.getMessage() +">");
