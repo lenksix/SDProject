@@ -2,7 +2,7 @@ package database_servers;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.*;
 
 /* creates the table we need for querying the urls */
 public class InitDb {
@@ -33,8 +33,14 @@ public class InitDb {
          System.out.println("Build failed: <"+ nhae.getMessage() +">");
          nhae.printStackTrace();
       }
-      catch(com.datastax.driver.core.exceptions.SyntaxError Dse) {
-         Dse.printStackTrace();
+      catch(SyntaxError dse) {
+         dse.printStackTrace();
+      }
+      catch(QueryExecutionException qee) {
+         qee.printStackTrace();
+      }
+      catch(QueryValidationException qve) {
+         qve.printStackTrace();
       }
    }
 }

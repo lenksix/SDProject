@@ -39,8 +39,9 @@ public class DbExp {
          session.execute("CREATE INDEX IF NOT EXISTS lastnameUsers"
                + " ON demo.users(lastname);");
          //ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White'");
-         ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White'");
+         ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White';");
          for(Row row: results){
+            row.ge
             System.out.format("%s\n", row.getString("firstname"));
          }
          session.close();
