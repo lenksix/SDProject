@@ -22,13 +22,15 @@ class TestVids
       session = cluster.connect();
          
       session.execute("USE streaming;");
-      //If it's the first time you execute the class, uncomment the following lines
+      // if it's the first time you execute the class, uncomment the following lines
       /*
       session.execute("INSERT INTO channel_vids(channel_name, vids) VALUES ("
             //+ "now(),"
     		+ "'dellimellow',"
             + "{'https://www.youtube.com/watch?v=gVpYcpmNRb4':'path da specificare'})");
       */
+      
+      // this query is used to update a row in the database
       session.execute("UPDATE channel_vids SET "
       		+ "vids = vids + {'https://www.youtube.com/watch?v=gVpYcpmNRb5':'path da specificare'}"
       		+ " WHERE "

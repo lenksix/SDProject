@@ -30,11 +30,13 @@ class InitDb {
                + "vids map<text,text>, " //where map is <url, path>
                + "PRIMARY KEY(channel_name));");  
       }
-      catch(NoHostAvailableException nhae) {
+      catch(NoHostAvailableException nhae) 
+      {
          System.out.println("Build failed: <"+ nhae.getMessage() +">");
          nhae.printStackTrace();
       }
-      catch(com.datastax.driver.core.exceptions.SyntaxError Dse) {
+      catch(com.datastax.driver.core.exceptions.SyntaxError Dse) 
+      {
          Dse.printStackTrace();
       }
    } 
