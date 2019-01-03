@@ -41,7 +41,6 @@ public class DbExp {
          //ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White'");
          ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White';");
          for(Row row: results){
-            row.ge
             System.out.format("%s\n", row.getString("firstname"));
          }
          session.close();

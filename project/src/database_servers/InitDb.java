@@ -5,13 +5,14 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.*;
 
 /* creates the table we need for querying the urls */
-public class InitDb {
+class InitDb {
 
    public static void main(String[] args) {
       Cluster cluster;
       Session session;
       
-      try {
+      try 
+      {
          cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
          session = cluster.connect();
          
@@ -24,23 +25,19 @@ public class InitDb {
          session.execute("USE streaming;");
          //Create the table 
          session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
-               + "id_channel uuid,"
+               //+ "id_channel uuid,"
                + "channel_name text,"
-               + "vids map<text,text>, " //where map is <name_video, url>
-               + "PRIMARY KEY(id_channel, channel_name));");  
+               + "vids map<text,text>, " //where map is <url, path>
+               + "PRIMARY KEY(channel_name));");  
       }
-      catch(NoHostAvailableException nhae) {
+      catch(NoHostAvailableException nhae) 
+      {
          System.out.println("Build failed: <"+ nhae.getMessage() +">");
          nhae.printStackTrace();
       }
-      catch(SyntaxError dse) {
-         dse.printStackTrace();
+      catch(com.datastax.driver.core.exceptions.SyntaxError Dse) 
+      {
+         Dse.printStackTrace();
       }
-      catch(QueryExecutionException qee) {
-         qee.printStackTrace();
-      }
-      catch(QueryValidationException qve) {
-         qve.printStackTrace();
-      }
-   }
+   } 
 }

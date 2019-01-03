@@ -1,43 +1,56 @@
 package test_Db;
 
+import java.util.*;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.datastax.driver.core.exceptions.*;
+import com.google.common.reflect.TypeToken;
 
-public class TestVids {
-   
-   public static void main(String[] args) {
+class TestVids 
+{
+   public static void main(String[] args) 
+   {
       
       Cluster cluster;
       Session session;
-      try{
        
-         cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-
-         session = cluster.connect();
-     
+      cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+        
+      session = cluster.connect();
          
+      session.execute("USE streaming;");
+      // if it's the first time you execute the class, uncomment the following lines
+      
+      session.execute("INSERT INTO channel_vids(channel_name, vids) VALUES ("
+            //+ "now(),"
+         + "'dellimellow',"
+            + "{'https://www.youtube.com/watch?v=gVpYcpmNRb4':'path da specificare'})");
+      
+      
+      // this query is used to update a row in the database
+      session.execute("UPDATE channel_vids SET "
+            + "vids = vids + {'https://www.youtube.com/watch?v=gVpYcpmNRb5':'path da specificare'}"
+            + " WHERE "
+            + "channel_name = 'dellimellow';");
+      
+      //query to select all the records in the channel_vids
+      ResultSet results = session.execute("SELECT * FROM channel_vids WHERE channel_name='dellimellow';");
          
-         session.execute("USE streaming;");
-         session.execute("INSERT INTO channel_vids(id, channel_name, lastName)" //Da qui devi completare la classe di test della nuova tabella channel_vids creata nella cartella src datatase_servers, basta che inserisci una tupla, fai una query e vedi se va.
-               + " VALUES ( now(), 'Walter', 'White')");
-         /*session.execute("CREATE INDEX IF NOT EXISTS lastnameUsers"
-               + " ON demo.users(lastname);");
-         //ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White'");
-         ResultSet results = session.execute("SELECT * FROM users WHERE lastname='White'");
-         for(Row row: results){
-            System.out.format("%s\n", row.getString("firstname"));
-         }
-         session.close();
-         cluster.close();
+      Map<String, String> m = null;
+      
+      for(Row row: results)
+      {
+        System.out.println(row);
+           m = row.getMap("vids", TypeToken.of(String.class), TypeToken.of(String.class)); //this returns a Map for each row in the table
+           //this lambda expression is used, in this case, to print all the values 
+           m.forEach((key, value) ->
+           {
+              System.out.println(key);
+              System.out.println(value);
+           });
       }
-      catch(NoHostAvailableException nhae){
-         nhae.printStackTrace();
-      }
-      catch(NullPointerException npe){
-        npe.printStackTrace();
-      }*/
    }
 }
