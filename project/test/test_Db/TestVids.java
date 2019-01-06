@@ -6,39 +6,55 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.*;
 import com.google.common.reflect.TypeToken;
+
+import database_servers.UtilitiesDb;
 
 class TestVids 
 {
    public static void main(String[] args) 
    {
-      
       Cluster cluster;
       Session session;
        
       cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
         
       session = cluster.connect();
-         
+      
+      String query = null;
+      
       session.execute("USE streaming;");
+      
       // if it's the first time you execute the class, uncomment the following lines
+      query = UtilitiesDb.insertChannelVids("dellimellow", "https://www.youtube.com/watch?v=gVpYcpmNRb4");
+      //session.execute(query);
+      //System.out.println(query);
       
-      session.execute("INSERT INTO channel_vids(channel_name, vids) VALUES ("
-            //+ "now(),"
-         + "'dellimellow',"
-            + "{'https://www.youtube.com/watch?v=gVpYcpmNRb4':'path da specificare'})");
+      // this query is used to update a row in the database  
+      query = UtilitiesDb.updateChannelVids("dellimellow", "https://www.youtube.com/watch?v=gVpYcpmNRb5");
       
-      
-      // this query is used to update a row in the database
-      session.execute("UPDATE channel_vids SET "
-            + "vids = vids + {'https://www.youtube.com/watch?v=gVpYcpmNRb5':'path da specificare'}"
-            + " WHERE "
-            + "channel_name = 'dellimellow';");
+      session.execute(query);
       
       //query to select all the records in the channel_vids
       ResultSet results = session.execute("SELECT * FROM channel_vids WHERE channel_name='dellimellow';");
-         
+      
+      for(Row row: results)
+      {
+    	  System.out.println(row);
+      }
+      
+      query = UtilitiesDb.insertUrlPath("prova", "path da specificare", "nome video");
+      System.out.println(query);
+      
+      session.execute(query);
+      results = session.execute("SELECT * FROM vid_path;");
+      
+      for(Row row: results)
+      {
+    	  System.out.println(row);
+      }
+      
+      /*
       Map<String, String> m = null;
       
       for(Row row: results)
@@ -52,5 +68,6 @@ class TestVids
               System.out.println(value);
            });
       }
+      */
    }
 }

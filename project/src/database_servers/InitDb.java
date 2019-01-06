@@ -27,8 +27,15 @@ class InitDb {
          session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
                //+ "id_channel uuid,"
                + "channel_name text,"
-               + "vids map<text,text>, " //where map is <url, path>
-               + "PRIMARY KEY(channel_name));");  
+               + "vids set<text>, " //where list is a list of url
+               + "PRIMARY KEY(channel_name));"); 
+         
+         // create the table of url-path for each video
+         session.execute("CREATE TABLE IF NOT EXISTS vid_path("
+         		+ "url text,"
+         		+ "path text,"
+         		+ "vid_name text,"
+         		+ "PRIMARY KEY(url));");
       }
       catch(NoHostAvailableException nhae) 
       {
