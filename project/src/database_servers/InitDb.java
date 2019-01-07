@@ -19,7 +19,7 @@ class InitDb {
          //Instantiate the keyspace, with standard parameters
          session.execute("CREATE KEYSPACE IF NOT EXISTS streaming WITH replication = {"
                + " 'class': 'SimpleStrategy', "
-               + " 'replication_factor': '3' "
+               + " 'replication_factor': '1' "
                + "};" );
          //Connect to the keyspace already instatiated
          session.execute("USE streaming;");
@@ -34,7 +34,6 @@ class InitDb {
          session.execute("CREATE TABLE IF NOT EXISTS vid_path("
          		+ "url text,"
          		+ "path text,"
-         		+ "vid_name text,"
          		+ "PRIMARY KEY(url));");
       }
       catch(NoHostAvailableException nhae) 

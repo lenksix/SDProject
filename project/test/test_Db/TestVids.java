@@ -27,7 +27,7 @@ class TestVids
       
       // if it's the first time you execute the class, uncomment the following lines
       query = UtilitiesDb.insertChannelVids("dellimellow", "https://www.youtube.com/watch?v=gVpYcpmNRb4");
-      //session.execute(query);
+      session.execute(query);
       //System.out.println(query);
       
       // this query is used to update a row in the database  
@@ -43,7 +43,7 @@ class TestVids
     	  System.out.println(row);
       }
       
-      query = UtilitiesDb.insertUrlPath("prova", "path da specificare", "nome video");
+      query = UtilitiesDb.insertUrlPath("prova", "path da specificare");
       System.out.println(query);
       
       session.execute(query);
@@ -69,5 +69,7 @@ class TestVids
            });
       }
       */
+      session.close();
+      cluster.close();
    }
 }

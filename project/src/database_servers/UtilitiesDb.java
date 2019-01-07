@@ -58,14 +58,13 @@ public class UtilitiesDb
     * 
     * @param url the url of the video
     * @param path the path where the video is stored
-    * @param v_name the name of the video
     * @return the query string to use to insert the new video into the vid_path table 
     */
-   public static String insertUrlPath(String url, String path, String v_name)
+   public static String insertUrlPath(String url, String path)
    {
-	   final String q = "INSERT INTO vid_path(url, path, vid_name) VALUES ('"
-	   		+ url + "', '" + path + "', '" + v_name + "')";
-	   		//+ " IF NOT EXISTS;";
+	   final String q = "INSERT INTO vid_path(url, path) VALUES ('"
+	   		+ url + "', '" + path + "')"
+	   		+ " IF NOT EXISTS;";
 	   return q;
    }
 }
