@@ -52,7 +52,7 @@ class TestVids
       for(Row row: results)
       {
     	  System.out.println(row);
-      }
+      } 
       
       /*
       Map<String, String> m = null;
