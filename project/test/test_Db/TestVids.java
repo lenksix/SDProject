@@ -1,3 +1,8 @@
+/**
+ * TestVids class: used to test the queries to the database
+ * @author Andrea Bugin and Ilie Sarpe
+ */
+
 package test_Db;
 
 import java.util.*;

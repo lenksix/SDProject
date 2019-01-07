@@ -1,3 +1,11 @@
+/**
+ * InitDb class: it creates the database "streaming" and creates the two tables.
+ * 
+ * @author Andrea Bugin ad Ilie Sarpe
+ *
+ */
+
+
 package database_servers;
 
 import com.datastax.driver.core.Cluster;
