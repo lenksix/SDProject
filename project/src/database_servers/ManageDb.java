@@ -1,106 +1,165 @@
+/**
+ * ManageDb class: it manage the request from clients and perform the query to the database sending the response using the protocol developed
+ * @author Andrea Bugin and Ilie Sarpe
+ */
+
 package database_servers;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
+import com.datastax.driver.core.*;
 
-/* returns the results of a given query.. in further development this will 
- * create different servants that will provide different services */
-public class ManageDb {
-   
-   final static int SOCKETPORT = 8765;
-   final static String errorMsg = "600 GENERIC ERROR";
-   
-   public static void main(String[] args) {
-      
-      ServerSocket serverSock = null;
-      Socket clientSock = null;
-      //OutputStream outStr = null;
-      //InputStream inpStr = null;
-      
-      //instead of BufferedReader, use Scanner, it's easier
-      Scanner clientReq = null;
-      PrintWriter clientResp = null;
-      Cluster cluster;
-      Session session;
-      
-      
-      try {
-         //Instantiate the server socket
-         serverSock = new ServerSocket(SOCKETPORT);
-         System.out.println("Ok, serversocket created!");
-      }
-      catch(IOException ioe) {
-         ioe.printStackTrace();         
-      }
-      catch(SecurityException se) {
-         se.printStackTrace();
-      }
-      catch(IllegalArgumentException iae) {
-         iae.printStackTrace();         
-      }
-      
-      while(true) 
-      {
-         try 
-         {
-            //accept a connection
-            clientSock = serverSock.accept();
-            System.out.println("Connection accepted");
-         }
-         catch(IOException ioe) {
-            ioe.printStackTrace();
-         }
-         try {
-
-            //connect to the cluster
-            cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
-            session = cluster.connect();
-            
-            String request = null;
-            String response = null;
-            String query = null;
-            ResultSet queryResult = null;
-            final int NUMARGS = 4;
-            //UtilitiesDb utilities = new UtilitiesDb();
-            
-            clientReq = new Scanner(clientSock.getInputStream());
-            clientResp = new PrintWriter(clientSock.getOutputStream());
-            
-            while(clientReq.hasNextLine()) 
-            {
-            	request = clientReq.nextLine();
-            	String[] arguments = request.split(" "); // Recall the format of the request is GET SP DB SP ID_CH SP ID_RISORSA
-            	//form the query for the db
-            	if((arguments.length == NUMARGS) && arguments[0].equals("GET") && arguments[1].equals("DB")) 
-            		query = UtilitiesDb.createQuery(arguments[2], arguments[3]); // (Channel, Url)
-            	else 
-            	{
-            		response = errorMsg;
-            		clientResp.println(response);
-            		clientResp.flush();
-            		continue;
-            	}
-            	queryResult = session.execute(query);
-            	response = UtilitiesDb.getResponse(queryResult);
-            	clientResp.println(response);
-            	clientResp.flush();
-            }
-         }
-         catch(IOException ioe1) {
-            ioe1.printStackTrace();
-            try {
-               clientSock.close();
-            }
-            catch(IOException ioe2) {
-               ioe2.printStackTrace();
-            }
-         }
-         clientReq.close();
-      }
-   }
+public class ManageDb 
+{
+	
+	final static int SOCKETPORT = 8765;
+	final static String errorMsg = "600 GENERIC ERROR";
+	
+	Cluster cluster = null;
+	Session session = null;
+	
+	// Usual main method
+	public static void main(String[] argv)
+	{
+		(new ManageDb()).exec(argv);
+	}
+	
+	private void exec(String[] argv) 
+	{
+		ServerSocket serverSock = null;
+		Socket clientSock = null;
+		
+		// run cassandra in background if it is not (useful in Windows for example)
+		try
+		{
+			Runtime.getRuntime().exec("cassandra -f");
+		}
+		catch(IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+		
+		try 
+		{
+			//Instantiate the server socket
+			serverSock = new ServerSocket(SOCKETPORT);
+			System.out.println("Ok, serversocket created!");
+		}
+		catch(IOException ioe) 
+		{
+			ioe.printStackTrace();         
+		}
+		
+		while(true) 
+		{
+			try 
+			{
+				// accept a connection, when a client is connected, a new thread is created to manage the connection
+				// (no thread pooling)
+				clientSock = serverSock.accept();
+				System.out.println("Connection accepted, a new thread is going to be created.");
+				ConnectionThread ct = new ConnectionThread(clientSock);
+				ct.start();
+			}
+			catch(IOException ioe) 
+			{
+				ioe.printStackTrace();
+			}
+		}
+	}
+	
+	private class ConnectionThread extends Thread
+	{
+		private static final int NUMARGS = 3;
+		private Socket s = null;
+		String request = null;
+		String response = null;
+		String query = null;
+		ResultSet queryResult = null;
+		
+		public ConnectionThread(Socket s)
+		{
+			this.s = s;
+		}
+		
+		public void run()
+		{
+			Scanner clientReq = null;
+			PrintWriter clientResp = null;
+			//connect to the cluster
+			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			session = cluster.connect();
+			session.execute("USE streaming;");
+			
+			try
+			{
+				clientReq = new Scanner(s.getInputStream());
+				clientResp = new PrintWriter(s.getOutputStream());
+			}
+			catch(IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
+			
+			while(clientReq.hasNextLine()) 
+			{
+				request = clientReq.nextLine();
+				
+				// NEW PROTOCOL 
+				// Remember the format of the possible requests: 
+				// GET SP ALL SP CHANNEL_NAME or
+				// GET SP VIDEO SP URL (where URL is the url of the video)
+				
+				String[] args = request.split(" "); 
+				//form the query for the db
+				if((args.length == NUMARGS) && args[0].equals("GET") && (args[1].equals("ALL") || args[1].equals("VIDEO"))) 
+				{
+					if(args[1].equals("ALL"))
+						query = UtilitiesDb.getAllVideos(args[2]);
+					else
+						query = UtilitiesDb.getPath(args[2]);
+				}
+				else 
+				{
+					// if the request is not well formed
+					response = errorMsg;
+					clientResp.println(response);
+					clientResp.flush();
+					continue;
+				}
+				System.out.println(query);
+				queryResult = session.execute(query);
+				
+				// manage the response for the query to the database
+				// we have to decide the appropriate response
+				response = "";
+				for(Row row : queryResult)
+				{
+					response += row.toString();
+				}
+				
+				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
+				if(response.isEmpty())
+					response = "404 NOT FOUND";
+				else
+					response = "200 OK " + response;
+				//response = UtilitiesDb.getResponse(queryResult);
+				clientResp.println(response);
+				clientResp.flush();
+			}
+			System.out.println("Closing the connection.");
+			try
+			{
+				clientReq.close();
+				clientResp.close();
+				s.close();
+			}
+			catch(IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
+		}
+	}
 }
