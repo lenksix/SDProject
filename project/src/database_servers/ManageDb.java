@@ -40,7 +40,7 @@ public class ManageDb
 			}
 			else if(os.startsWith("win"))
 			{
-				Runtime.getRuntime().exec("cmd /c cassandra -f");
+				Runtime.getRuntime().exec("cmd /c start cassandra -f");
 			}
 			else
 			{
