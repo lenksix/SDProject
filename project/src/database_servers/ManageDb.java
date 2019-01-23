@@ -13,7 +13,7 @@ import com.datastax.driver.core.*;
 
 public class ManageDb 
 {
-	
+	private static final String os = System.getProperty("os.name").toLowerCase();
 	final static int SOCKETPORT = 8765;
 	final static String errorMsg = "600 GENERIC ERROR";
 	
@@ -34,11 +34,24 @@ public class ManageDb
 		// run cassandra in background if it is not (useful in Windows for example)
 		try
 		{
-			Runtime.getRuntime().exec("cassandra -f");
+			if(os.contains("linux"))
+			{
+				Runtime.getRuntime().exec("sh cassandra -f");
+			}
+			else if(os.startsWith("win"))
+			{
+				Runtime.getRuntime().exec("cmd /c cassandra -f");
+			}
+			else
+			{
+				System.out.println("Operating system not supported.");
+				return;
+			}
 		}
 		catch(IOException ioe)
 		{
 			ioe.printStackTrace();
+			System.exit(1);
 		}
 		
 		try 
