@@ -11,11 +11,13 @@ import java.util.*;
 
 import com.datastax.driver.core.*;
 
-public class ManageDb 
-{
+public class ManageDb {
 	private static final String os = System.getProperty("os.name").toLowerCase();
 	final static int SOCKETPORT = 8765;
-	final static String errorMsg = "600 GENERIC ERROR";
+	final static String errorMsg = "600 GENERIC ERROR"; 
+	final static int NUMARGS = 3;
+	final static String clusterAdd = "127.0.0.1";
+	final static String notFound = "404 NOT FOUND";
 	
 	Cluster cluster = null;
 	Session session = null;
@@ -23,7 +25,21 @@ public class ManageDb
 	// Usual main method
 	public static void main(String[] argv)
 	{
-		(new ManageDb()).exec(argv);
+	   // Just for test
+	   /*
+	   Checker che = null;
+	   Scanner sc = new Scanner(System.in);
+	   String line = null;
+	   
+	   while((line = sc.nextLine()) != null) {
+	      che = UtilitiesDb.checkQuery(line);
+	      boolean b = che.isCorrect();
+	      if (b == true) System.out.println("<true>");
+	      else System.out.println("<false>");
+	      System.out.println("<"+ che.getMessage() + ">");
+	   }
+	   */
+	   (new ManageDb()).exec(argv);
 	}
 	
 	private void exec(String[] argv) 
@@ -31,7 +47,7 @@ public class ManageDb
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
 		
-		// run cassandra in background if it is not (useful in Windows for example)
+		// run cassandra in background if it is not already running (useful in Windows for example)
 		try
 		{
 			if(os.contains("linux"))
@@ -58,7 +74,7 @@ public class ManageDb
 		{
 			//Instantiate the server socket
 			serverSock = new ServerSocket(SOCKETPORT);
-			System.out.println("Ok, serversocket created!");
+			System.out.println("Ok, Serversocket created!");
 		}
 		catch(IOException ioe) 
 		{
@@ -85,12 +101,12 @@ public class ManageDb
 	
 	private class ConnectionThread extends Thread
 	{
-		private static final int NUMARGS = 3;
 		private Socket s = null;
 		String request = null;
 		String response = null;
 		String query = null;
 		ResultSet queryResult = null;
+		
 		
 		public ConnectionThread(Socket s)
 		{
@@ -102,9 +118,10 @@ public class ManageDb
 			Scanner clientReq = null;
 			PrintWriter clientResp = null;
 			//connect to the cluster
-			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
+			cluster = Cluster.builder().addContactPoint(clusterAdd).build();
 			session = cluster.connect();
 			session.execute("USE streaming;");
+			Checker check = null;
 			
 			try
 			{
@@ -122,45 +139,38 @@ public class ManageDb
 				
 				// NEW PROTOCOL 
 				// Remember the format of the possible requests: 
-				// GET SP ALL SP CHANNEL_NAME or
-				// GET SP VIDEO SP URL (where URL is the url of the video)
+				// 1. GET SP ALL SP CHANNEL_NAME or
+				// 2. GET SP VIDEO SP URL (where URL is the url of the video)
 				
-				String[] args = request.split(" "); 
-				//form the query for the db
-				if((args.length == NUMARGS) && args[0].equals("GET") && (args[1].equals("ALL") || args[1].equals("VIDEO"))) 
-				{
-					if(args[1].equals("ALL"))
-						query = UtilitiesDb.getAllVideos(args[2]);
-					else
-						query = UtilitiesDb.getPath(args[2]);
+				check = UtilitiesDb.checkQuery(request);
+				if(!check.isCorrect()) {
+				   response = check.getMessage();
+				   clientResp.println(response);
+               clientResp.flush();
+               continue;
 				}
-				else 
-				{
-					// if the request is not well formed
-					response = errorMsg;
-					clientResp.println(response);
-					clientResp.flush();
-					continue;
+				else {
+				   query = check.getMessage();
+   				System.out.println(query);
+   				queryResult = session.execute(query);
+   				
+   				// manage the response for the query to the database
+   				// we have to decide the appropriate response
+   				response = "";
+   				for(Row row : queryResult)
+   				{
+   					response += row.toString();
+   				}
+   				
+   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
+   				if(response.isEmpty())
+   					response = notFound;
+   				else
+   					response = "200 OK " + response;
+   				//response = UtilitiesDb.getResponse(queryResult);
+   				clientResp.println(response);
+   				clientResp.flush();
 				}
-				System.out.println(query);
-				queryResult = session.execute(query);
-				
-				// manage the response for the query to the database
-				// we have to decide the appropriate response
-				response = "";
-				for(Row row : queryResult)
-				{
-					response += row.toString();
-				}
-				
-				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
-				if(response.isEmpty())
-					response = "404 NOT FOUND";
-				else
-					response = "200 OK " + response;
-				//response = UtilitiesDb.getResponse(queryResult);
-				clientResp.println(response);
-				clientResp.flush();
 			}
 			System.out.println("Closing the connection.");
 			try

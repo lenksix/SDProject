@@ -5,9 +5,16 @@
 
 package database_servers;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 public class UtilitiesDb 
 {
-	/*
+   final static int NUMARGS = 3;
+   final static ArrayList<String> methods = new ArrayList<String>(Arrays.asList("GET"));
+   final static ArrayList<String> options = new ArrayList<String>(Arrays.asList("ALL", "VIDEO"));
+	
+   /*
    public static String createQuery(String channel, String url) {
       return null;
    }
@@ -87,5 +94,38 @@ public class UtilitiesDb
 			+ url + "', '" + path + "')"
 	   		+ "	IF NOT EXISTS;";
 		return q;
+	}
+	
+	/**
+	 * To check the syntax of the query received and identify the service a.k.a method, requested
+	 * @param request the string to be checked
+	 * @return an object of type Checker with informations about the correctness of the request
+	 */
+	public static Checker checkQuery(String request) { 
+	   String[] args = request.split(" ");
+	   
+	    
+	   if(args.length == NUMARGS) {
+	      for(int i = 0; i< methods.size(); i++) {
+	         if(methods.get(i).equals(args[0].toUpperCase()) && (i == 0)) {
+	            for(int j = 0; j < options.size(); j++) {
+	               if(options.get(j).equals(args[1].toUpperCase())) {
+	                  if(j == 0){ // GET SP ALL SP CHANNEL_NAME
+	                     return new Checker(true, UtilitiesDb.getAllVideos(args[NUMARGS-1]));
+	                  }
+	                  else if(j == 1) { // GET SP VIDEO SP URL
+	                     return new Checker(true, UtilitiesDb.getPath(args[NUMARGS-1]));
+	                  }
+	               }
+	            }
+	            return new Checker(false, "612 ERROR OPTION"); // Option doesn't exists
+	         }  
+	      }
+	      return new Checker(false,"611 ERROR METHOD"); // Method doesn't exists
+	   }
+	   else {
+         return new Checker(false,"610 ERROR NUM_PARAMS"); // Error on the number of parameters
+      }
+	   
 	}
 }
