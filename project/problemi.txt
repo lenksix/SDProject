@@ -1,0 +1,14 @@
+Problema: Il database è case sensitive, vogliamo o no tenere sta cosa?
+Problema: realizzare classi/thread che pingano per vedere se i vari server su tutti i livelli sono online o meno
+Recall: da implementare politiche di scelta server -> ci servono informazioni addizionali!
+Probl: realizzare struttura distribuita per i vari livelli che ci dice che server sono attivi!
+Prolema: manager centralizzato? + comodo, - se va down?, overhead?
+problema: boot iniziale, deve esserci una locazione di defaul!
+problema: meccanismo di gestione chiavi, occorre ispirarsi a kademlia..
+Proble: prevedere o meno i ridirezionamenti? direi di si..
+Idea: implementare meccanismo di riconoscimento richieste estranee
+L2: occorre limitare il numero di video in base alla grandezza
+Idea: timeout cache-> garantire risorse abbastanza aggiornate
+Problema L2 > informazione addizionale per diversi tipi di richieste e.g Video o lista video?
+
+Problema: file per sapere dove sono i vari server Proposta: tenerlo nel db;
