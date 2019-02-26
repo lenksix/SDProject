@@ -115,6 +115,7 @@ public class ManageDb {
 		
 		public void run()
 		{
+			boolean done = false;
 			Scanner clientReq = null;
 			PrintWriter clientResp = null;
 			//connect to the cluster
@@ -133,7 +134,7 @@ public class ManageDb {
 				ioe.printStackTrace();
 			}
 			
-			while(clientReq.hasNextLine()) 
+			while(clientReq.hasNextLine() && !done) 
 			{
 				request = clientReq.nextLine();
 				
@@ -143,33 +144,36 @@ public class ManageDb {
 				// 2. GET SP VIDEO SP URL (where URL is the url of the video)
 				
 				check = UtilitiesDb.checkQuery(request);
-				if(!check.isCorrect()) {
+				if(!check.isCorrect()) 
+				{
 				   response = check.getMessage();
 				   clientResp.println(response);
-               clientResp.flush();
-               continue;
+	               clientResp.flush();
 				}
-				else {
-				   query = check.getMessage();
-   				System.out.println(query);
-   				queryResult = session.execute(query);
-   				
-   				// manage the response for the query to the database
-   				// we have to decide the appropriate response
-   				response = "";
-   				for(Row row : queryResult)
-   				{
-   					response += row.toString();
-   				}
-   				
-   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
-   				if(response.isEmpty())
-   					response = notFound;
-   				else
-   					response = "200 OK " + response;
-   				//response = UtilitiesDb.getResponse(queryResult);
-   				clientResp.println(response);
-   				clientResp.flush();
+				else 
+				{
+					query = check.getMessage();
+	   				System.out.println(query);
+	   				queryResult = session.execute(query);
+	   				
+	   				// manage the response for the query to the database
+	   				// we have to decide the appropriate response
+	   				response = "";
+	   				for(Row row : queryResult)
+	   				{
+	   					response += row.toString();
+	   				}
+	   				
+	   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
+	   				if(response.isEmpty())
+	   					response = notFound;
+	   				else
+	   					response = "200 OK ";// + response;
+	   				//response = UtilitiesDb.getResponse(queryResult);
+	   				clientResp.println(response);
+	   				clientResp.flush();
+	   				done = true;
+	   				System.out.println(response);
 				}
 			}
 			System.out.println("Closing the connection.");
