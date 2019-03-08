@@ -164,7 +164,8 @@ public class ManageDb {
 	   				String resourcePath = "";
 	   				for(Row row : queryResult)
 	   				{
-	   					resourcePath += row.toString();
+	   					resourcePath += row.getString(0);
+	   					System.out.println(resourcePath);
 	   				}
 	   				
 	   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
@@ -174,11 +175,11 @@ public class ManageDb {
 	   				{
 	   					response = "200 OK ";// + response;
 	   					clientResp.println(response);
-	                  clientResp.flush();
+	   					clientResp.flush();
 	   					//DataInputStream dis = new DataInputStream(new BufferedInputStream(cliSock.getInputStream()));
-	   			      DataOutputStream dos = null;
+	   					DataOutputStream dos = null;
 	   			      
-	   			      File video = new File(resourcePath);
+	   			      File video = new File(System.getProperty("user.dir").trim() + resourcePath);
 	   			      //long fileSize = dis.readLong();
 	   			      FileInputStream fileStream;
                      try 

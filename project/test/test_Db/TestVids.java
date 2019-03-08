@@ -48,7 +48,7 @@ class TestVids
 		}
 		
 		
-		query = UtilitiesDb.insertUrlPath("prova", "path da specificare");
+		query = UtilitiesDb.insertUrlPath("prova", "//media//file.txt");
       	System.out.println(query);
       	
       	session.execute(query);
