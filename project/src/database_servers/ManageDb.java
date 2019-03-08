@@ -192,6 +192,8 @@ public class ManageDb {
                             dos.write(chunck, 0, n);
                             dos.flush();
                         }
+                        dos.close();
+                        fileStream.close();
                      } 
                      catch (FileNotFoundException e) 
                      {
