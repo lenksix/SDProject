@@ -19,6 +19,8 @@ public class ManageDb {
 	final static String clusterAdd = "127.0.0.1";
 	final static String notFound = "404 NOT FOUND";
 	
+	final static int CHUNK_SIZE=1000;
+	
 	Cluster cluster = null;
 	Session session = null;
 	
@@ -101,7 +103,7 @@ public class ManageDb {
 	
 	private class ConnectionThread extends Thread
 	{
-		private Socket s = null;
+		private Socket cliSock = null;
 		String request = null;
 		String response = null;
 		String query = null;
@@ -110,7 +112,7 @@ public class ManageDb {
 		
 		public ConnectionThread(Socket s)
 		{
-			this.s = s;
+			cliSock = s;
 		}
 		
 		public void run()
@@ -126,8 +128,8 @@ public class ManageDb {
 			
 			try
 			{
-				clientReq = new Scanner(s.getInputStream());
-				clientResp = new PrintWriter(s.getOutputStream());
+				clientReq = new Scanner(cliSock.getInputStream());
+				clientResp = new PrintWriter(cliSock.getOutputStream());
 			}
 			catch(IOException ioe)
 			{
@@ -159,16 +161,50 @@ public class ManageDb {
 	   				// manage the response for the query to the database
 	   				// we have to decide the appropriate response
 	   				response = "";
+	   				String resourcePath = "";
 	   				for(Row row : queryResult)
 	   				{
-	   					response += row.toString();
+	   					resourcePath += row.toString();
 	   				}
 	   				
 	   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
-	   				if(response.isEmpty())
+	   				if(resourcePath.isEmpty())
 	   					response = notFound;
 	   				else
+	   				{
 	   					response = "200 OK ";// + response;
+	   					clientResp.println(response);
+	                  clientResp.flush();
+	   					//DataInputStream dis = new DataInputStream(new BufferedInputStream(cliSock.getInputStream()));
+	   			      DataOutputStream dos = null;
+	   			      
+	   			      File video = new File(resourcePath);
+	   			      //long fileSize = dis.readLong();
+	   			      FileInputStream fileStream;
+                     try 
+                     {
+                        dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
+                        fileStream = new FileInputStream(video);
+                        int n=0;
+                        byte []chunck = new byte[CHUNK_SIZE];
+                        while((n = fileStream.read(chunck)) != -1)
+                        {
+                            dos.write(chunck, 0, n);
+                            dos.flush();
+                        }
+                     } 
+                     catch (FileNotFoundException e) 
+                     {
+                        e.printStackTrace();
+                     }
+	   			      catch(IOException ioe3) 
+	   			      {  
+	   			         ioe3.printStackTrace();
+	   			         
+	   			      }
+
+	   			      
+	   				}
 	   				//response = UtilitiesDb.getResponse(queryResult);
 	   				clientResp.println(response);
 	   				clientResp.flush();
@@ -181,7 +217,7 @@ public class ManageDb {
 			{
 				clientReq.close();
 				clientResp.close();
-				s.close();
+				cliSock.close();
 			}
 			catch(IOException ioe)
 			{

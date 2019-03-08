@@ -163,14 +163,45 @@ public class ServerL2
 								pwDb.flush();
 								
 								String response = null;
+								int n =-1;
 								//while(scannerDb.hasNextLine())
 								//{
 									response = scannerDb.nextLine();
 									if(Integer.parseInt((response.split(" ")[0])) == 200)
+									{
 										/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!!*/
 										pwClient.println(response);
+										DataInputStream dis = null;
+										FileOutputStream fos = null;
+										
+										try 
+										{
+										   File video = new File("*Path in cache/idvideo*"); // Not correct 
+										   fos = new FileOutputStream(video);
+										   dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));  
+										   byte[] chunck = new byte[1000];
+										   while((n = dis.read(chunck)) != -1)
+										   {
+										      fos.write(chunck,0,n);
+										      fos.flush();
+										   }
+										   fos.close();
+										   synchronized(vidsCache)
+										   {
+										      vidsCache.put(check.getResource(), path);
+										   }
+										   
+										}
+										catch(IOException ioe)
+										{
+										   ioe.printStackTrace();
+										}
+									}
+									
 									else
+									{
 										pwClient.println("404 NOT FOUND"); /* Video non in DB */
+									}
 									pwClient.flush();
 									dbSock.close();
 								//}
