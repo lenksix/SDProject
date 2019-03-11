@@ -51,6 +51,9 @@ class TestVids
 		query = UtilitiesDb.insertUrlPath("prova", "//media//file.txt");
       	System.out.println(query);
       	
+      	query = UtilitiesDb.insertUrlPath("tesserato", "//media//media_db//tesseratoPD.mp4");
+      	System.out.println(query);
+      	
       	session.execute(query);
       	results = session.execute("SELECT * FROM vid_path;");
       	

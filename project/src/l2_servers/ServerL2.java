@@ -12,8 +12,9 @@ public class ServerL2
 {
 
 	private final static int SOCKETPORT = 8860;
-	private final static String hosts = System.getProperty("user.dir").trim() + "//src//l2_servers//db_host.txt";
+	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
+	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
 	
 	private static String dbAddress = null;
 	private static int dbPort = -1;
@@ -176,7 +177,8 @@ public class ServerL2
 										
 										try 
 										{
-										   File video = new File("*Path in cache/idvideo*"); // Not correct 
+											String path = CACHE_DEFAULT_PATH + check.getResource();
+										   File video = new File(path);
 										   fos = new FileOutputStream(video);
 										   dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));  
 										   byte[] chunck = new byte[1000];

@@ -91,8 +91,8 @@ public class UtilitiesDb
 	public static String insertUrlPath(String url, String path)
 	{
 		final String q = "INSERT INTO vid_path(url, path) VALUES ('"
-			+ url + "', '" + path + "')"
-	   		+ "	IF NOT EXISTS;";
+			+ url + "', '" + path + "');";
+	   		//+ "	IF NOT EXISTS;";
 		return q;
 	}
 	

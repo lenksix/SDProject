@@ -136,7 +136,7 @@ public class ManageDb {
 				ioe.printStackTrace();
 			}
 			
-			while(clientReq.hasNextLine() && !done) 
+			while(!done && clientReq.hasNextLine()) 
 			{
 				request = clientReq.nextLine();
 				
@@ -182,30 +182,32 @@ public class ManageDb {
 	   			      File video = new File(System.getProperty("user.dir").trim() + resourcePath);
 	   			      //long fileSize = dis.readLong();
 	   			      FileInputStream fileStream;
-                     try 
-                     {
-                        dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
-                        fileStream = new FileInputStream(video);
-                        int n=0;
-                        byte []chunck = new byte[CHUNK_SIZE];
-                        while((n = fileStream.read(chunck)) != -1)
-                        {
-                            dos.write(chunck, 0, n);
-                            dos.flush();
-                        }
-                        dos.close();
-                        fileStream.close();
-                     } 
-                     catch (FileNotFoundException e) 
-                     {
+	   			      long file_size = video.length();
+	   			      try 
+	   			      {
+	   			    	  dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
+	   			    	  fileStream = new FileInputStream(video);
+	   			    	  int n=0;
+	   			    	  byte[] chunck = new byte[CHUNK_SIZE];
+	   			    	  while((n = fileStream.read(chunck)) != -1)
+	   			    	  {
+	   			    		  dos.write(chunck, 0, n);
+	   			    		  dos.flush();
+	   			    	  }
+	   			    	  clientResp.println("File inviato");
+	   			    	  clientResp.flush();
+	   			    	  dos.close();
+	   			    	  fileStream.close();
+	   			      } 
+	   			      catch (FileNotFoundException e) 
+	   			      {
                         e.printStackTrace();
-                     }
+	   			      }
 	   			      catch(IOException ioe3) 
 	   			      {  
-	   			         ioe3.printStackTrace();
-	   			         
+	   			    	  ioe3.printStackTrace();
 	   			      }
-
+	   			 
 	   			      
 	   				}
 	   				//response = UtilitiesDb.getResponse(queryResult);
