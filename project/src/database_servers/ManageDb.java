@@ -109,7 +109,6 @@ public class ManageDb {
 		String query = null;
 		ResultSet queryResult = null;
 		
-		
 		public ConnectionThread(Socket s)
 		{
 			cliSock = s;
@@ -155,66 +154,54 @@ public class ManageDb {
 				else 
 				{
 					query = check.getMessage();
-	   				System.out.println(query);
-	   				queryResult = session.execute(query);
+					System.out.println(query);
+					queryResult = session.execute(query);
 	   				
-	   				// manage the response for the query to the database
-	   				// we have to decide the appropriate response
-	   				response = "";
-	   				String resourcePath = "";
-	   				for(Row row : queryResult)
-	   				{
-	   					resourcePath += row.getString(0);
-	   					System.out.println(resourcePath);
-	   				}
-	   				
-	   				// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
-	   				if(resourcePath.isEmpty())
-	   					response = notFound;
-	   				else
-	   				{
-	   					response = "200 OK ";// + response;
-	   					clientResp.println(response);
-	   					clientResp.flush();
-	   					//DataInputStream dis = new DataInputStream(new BufferedInputStream(cliSock.getInputStream()));
-	   					DataOutputStream dos = null;
-	   			      
-	   			      File video = new File(System.getProperty("user.dir").trim() + resourcePath);
-	   			      //long fileSize = dis.readLong();
-	   			      FileInputStream fileStream;
-	   			      long file_size = video.length();
-	   			      try 
-	   			      {
-	   			    	  dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
-	   			    	  fileStream = new FileInputStream(video);
-	   			    	  int n=0;
-	   			    	  byte[] chunck = new byte[CHUNK_SIZE];
-	   			    	  while((n = fileStream.read(chunck)) != -1)
-	   			    	  {
-	   			    		  dos.write(chunck, 0, n);
-	   			    		  dos.flush();
-	   			    	  }
-	   			    	  clientResp.println("File inviato");
-	   			    	  clientResp.flush();
-	   			    	  dos.close();
-	   			    	  fileStream.close();
-	   			      } 
-	   			      catch (FileNotFoundException e) 
-	   			      {
-                        e.printStackTrace();
-	   			      }
-	   			      catch(IOException ioe3) 
-	   			      {  
-	   			    	  ioe3.printStackTrace();
-	   			      }
-	   			 
-	   			      
-	   				}
-	   				//response = UtilitiesDb.getResponse(queryResult);
-	   				clientResp.println(response);
-	   				clientResp.flush();
-	   				done = true;
-	   				System.out.println(response);
+					// manage the response for the query to the database
+					// we have to decide the appropriate response
+					response = "";
+					String resourcePath = "";
+					for(Row row : queryResult)
+					{
+						resourcePath += row.getString(0);
+						System.out.println(resourcePath);
+					}
+					
+					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
+					if(resourcePath.isEmpty())
+						response = notFound;
+					else
+					{
+						response = "200 OK ";// + response;
+						clientResp.println(response);
+						clientResp.flush();
+						
+						try 
+						{
+							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
+							FileInputStream fileStream = new FileInputStream(new File(resourcePath));
+							int n=0;
+							byte[] chunck = new byte[CHUNK_SIZE];
+							while((n = fileStream.read(chunck)) != -1)
+							{
+								dos.write(chunck, 0, n);
+								dos.flush();
+							}
+							dos.close();
+							fileStream.close();
+						}
+						catch(IOException ioe3) 
+						{  
+							ioe3.printStackTrace();
+						}
+						
+						
+					}
+					//response = UtilitiesDb.getResponse(queryResult);
+					clientResp.println(response);
+					clientResp.flush();
+					done = true;
+					System.out.println(response);
 				}
 			}
 			System.out.println("Closing the connection.");

@@ -7,10 +7,11 @@ import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.HashMap;
 
+import database_servers.UtilitiesDb;
+
 
 public class ServerL2 
 {
-
 	private final static int SOCKETPORT = 8860;
 	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
@@ -90,16 +91,17 @@ public class ServerL2
 		
 		public void run() 
 		{
-			OutputStream osClient = null;
-			InputStream isClient = null;
 			Scanner scannerClient = null;
 			PrintWriter pwClient = null;
 			Checker check = null;
 			
-			OutputStream osDb = null;
-			InputStream isDb = null;
 			Scanner scannerDb = null;
 			PrintWriter pwDb = null;
+			
+			File video = null;
+			DataOutputStream dos = null;
+			FileInputStream fileStream = null;
+			
 			
 			//boolean connectStatus = connectDB(dbAddress, dbPort);
 			try 
@@ -108,7 +110,6 @@ public class ServerL2
 				scannerClient = new Scanner(clientSock.getInputStream());
 				pwClient = new PrintWriter(clientSock.getOutputStream());
 				
-				//outer:
 				while(scannerClient.hasNextLine()) 
 				{
 					// Check syntax of the request
@@ -136,8 +137,21 @@ public class ServerL2
 							}
 							if(ownRes)
 							{
-								pwClient.println("VIDEO A " + resource + "NON VA FATTO COSI'");
+								pwClient.println("200 OK");
 								pwClient.flush();
+								dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+								fileStream = new FileInputStream(new File(resource + ".mp4"));
+								int n = 0;
+								byte[] chunck = new byte[1000];
+								long readBytes = 0;
+								while((n = fileStream.read(chunck)) != -1)
+								{
+									dos.write(chunck, 0, n);
+									dos.flush();
+									readBytes += n;
+								}
+								System.out.println("Bytes read from cache = " + readBytes);
+								fileStream.close();
 							}
 							else
 							{
@@ -164,49 +178,50 @@ public class ServerL2
 								pwDb.flush();
 								
 								String response = null;
-								int n =-1;
-								//while(scannerDb.hasNextLine())
-								//{
-									response = scannerDb.nextLine();
-									if(Integer.parseInt((response.split(" ")[0])) == 200)
-									{
-										/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!!*/
-										pwClient.println(response);
-										DataInputStream dis = null;
-										FileOutputStream fos = null;
-										
-										try 
-										{
-											String path = CACHE_DEFAULT_PATH + check.getResource();
-										   File video = new File(path);
-										   fos = new FileOutputStream(video);
-										   dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));  
-										   byte[] chunck = new byte[1000];
-										   while((n = dis.read(chunck)) != -1)
-										   {
-										      fos.write(chunck,0,n);
-										      fos.flush();
-										   }
-										   fos.close();
-										   synchronized(vidsCache)
-										   {
-										      vidsCache.put(check.getResource(), path);
-										   }
-										   
-										}
-										catch(IOException ioe)
-										{
-										   ioe.printStackTrace();
-										}
-									}
+								int n = -1;
+								response = scannerDb.nextLine();
+								if(Integer.parseInt((response.split(" ")[0])) == 200)
+								{
+									/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!!*/
+									pwClient.println(response);
+									DataInputStream dis = null;
+									FileOutputStream fos = null;
 									
-									else
+									try 
 									{
-										pwClient.println("404 NOT FOUND"); /* Video non in DB */
+										String path = CACHE_DEFAULT_PATH + check.getResource();
+										
+										video = new File(path);
+										fos = new FileOutputStream(video + ".mp4");
+										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
+										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+										byte[] chunck = new byte[1000];
+										long readBytes = 0;
+										while((n = dis.read(chunck)) != -1)
+										{
+											fos.write(chunck, 0, n);
+											fos.flush();
+											dos.write(chunck, 0, n);
+											dos.flush();
+											readBytes += n;
+										}
+										System.out.println("Bytes read from database = " + readBytes);
+										fos.close();
+										synchronized(vidsCache)
+										{
+											vidsCache.put(check.getResource(), path);
+										}	
 									}
-									pwClient.flush();
-									dbSock.close();
-								//}
+									catch(IOException ioe)
+									{
+									   ioe.printStackTrace();
+									}
+								}
+								else
+								{
+									pwClient.println("404 NOT FOUND"); /* Video non in DB */
+								}
+								dbSock.close();
 							}
 							catch(UnknownHostException uhe) 
 							{
@@ -223,27 +238,19 @@ public class ServerL2
 						pwClient.flush();
 						continue;
 					}
-					
-					// Ask for the resource to the manager of the database
-					
-					/*
-	               	System.out.println("Il client mi ha detto <" + line + ">");
-	               	pw.println("Grazie di avermi detto " + line);
-	               	pw.flush();
-					 */
-					
 				}
 				try 
 				{
+					dos.close();
 					clientSock.close();
-	            }
-	            catch(IOException ioe2) {
-	            	ioe2.printStackTrace();
-	            	}
-	         }
-	         catch(IOException ioe) {
-	         	ioe.printStackTrace();
-	         }
+				}
+				catch(IOException ioe2) {
+					ioe2.printStackTrace();
+				}
+			}
+			catch(IOException ioe) {
+				ioe.printStackTrace();
+			}
 		}
 	}
 }
