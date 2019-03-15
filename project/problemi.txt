@@ -8,7 +8,15 @@ problema: meccanismo di gestione chiavi, occorre ispirarsi a kademlia..
 Proble: prevedere o meno i ridirezionamenti? direi di si..
 Idea: implementare meccanismo di riconoscimento richieste estranee
 L2: occorre limitare il numero di video in base alla grandezza
+
+
 Idea: timeout cache-> garantire risorse abbastanza aggiornate
+-> l'idea è quella di assegnare ad ogni risorsa un timestamp; avere due thread che si occupano rispettivamente di:
+1. Su segnalazione del ConnectionThread viene fatta una richiesta di rimozione della risorsa.
+2. Garbage collector da definire: thread che ogni tanto controlla quanta memoria è disponibile. 
+
 Problema L2 > informazione addizionale per diversi tipi di richieste e.g Video o lista video?
 
 Problema: file per sapere dove sono i vari server Proposta: tenerlo nel db;
+
+

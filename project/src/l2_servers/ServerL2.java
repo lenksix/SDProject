@@ -20,7 +20,7 @@ public class ServerL2
 	private static String dbAddress = null;
 	private static int dbPort = -1;
 	private static HashMap<String,String> vidsCache = null; // map <ID_VID, /../localpath>
-	private static HashMap<String, String[]> namesCache = null; // map <ID_CH, Video[]> future implementation
+	//private static HashMap<String, String[]> namesCache = null; // map <ID_CH, Video[]> future implementation
 	
 	
 	public static void main(String[] args) {
@@ -50,7 +50,7 @@ public class ServerL2
 			System.out.println("Ok, file read!" + " <"+ dbAddress + "> "+ " <" + dbPort + "> ");
 			//initialize the local cache
 			vidsCache = new HashMap<String,String>();
-			namesCache = new HashMap<String,String[]>();
+			//namesCache = new HashMap<String,String[]>();
 			
 		} 
 		catch(IOException ioe) {
@@ -195,7 +195,7 @@ public class ServerL2
 										fos = new FileOutputStream(video + ".mp4");
 										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
 										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-										byte[] chunck = new byte[1000];
+										byte[] chunck = new byte[1024];
 										long readBytes = 0;
 										while((n = dis.read(chunck)) != -1)
 										{

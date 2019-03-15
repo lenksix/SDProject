@@ -103,7 +103,6 @@ public class UtilitiesDb
 	 */
 	public static Checker checkQuery(String request) { 
 	   String[] args = request.split(" ");
-	   
 	    
 	   if(args.length == NUMARGS) {
 	      for(int i = 0; i< methods.size(); i++) {
