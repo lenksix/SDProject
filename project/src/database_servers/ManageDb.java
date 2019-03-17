@@ -11,96 +11,92 @@ import java.util.*;
 
 import com.datastax.driver.core.*;
 
-public class ManageDb {
+public class ManageDb
+{
 	private static final String os = System.getProperty("os.name").toLowerCase();
 	final static int SOCKETPORT = 8765;
-	final static String errorMsg = "600 GENERIC ERROR"; 
+	final static String errorMsg = "600 GENERIC ERROR";
 	final static int NUMARGS = 3;
 	final static String clusterAdd = "127.0.0.1";
 	final static String notFound = "404 NOT FOUND";
-	
-	final static int CHUNK_SIZE=1000;
-	
+
+	final static int CHUNK_SIZE = 1000;
+
 	Cluster cluster = null;
 	Session session = null;
-	
+
 	// Usual main method
 	public static void main(String[] argv)
 	{
-	   // Just for test
-	   /*
-	   Checker che = null;
-	   Scanner sc = new Scanner(System.in);
-	   String line = null;
-	   
-	   while((line = sc.nextLine()) != null) {
-	      che = UtilitiesDb.checkQuery(line);
-	      boolean b = che.isCorrect();
-	      if (b == true) System.out.println("<true>");
-	      else System.out.println("<false>");
-	      System.out.println("<"+ che.getMessage() + ">");
-	   }
-	   */
-	   (new ManageDb()).exec(argv);
+		// Just for test
+		/*
+		 * Checker che = null; Scanner sc = new Scanner(System.in); String line = null;
+		 * 
+		 * while((line = sc.nextLine()) != null) { che = UtilitiesDb.checkQuery(line);
+		 * boolean b = che.isCorrect(); if (b == true) System.out.println("<true>");
+		 * else System.out.println("<false>"); System.out.println("<"+ che.getMessage()
+		 * + ">"); }
+		 */
+		(new ManageDb()).exec(argv);
 	}
-	
-	private void exec(String[] argv) 
+
+	private void exec(String[] argv)
 	{
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
-		
-		// run cassandra in background if it is not already running (useful in Windows for example)
+
+		// run cassandra in background if it is not already running (useful in Windows
+		// for example)
 		try
 		{
-			if(os.contains("linux"))
+			if (os.contains("linux"))
 			{
 				Runtime.getRuntime().exec("sh cassandra -f");
-			}
-			else if(os.startsWith("win"))
+			} else if (os.startsWith("win"))
 			{
 				Runtime.getRuntime().exec("cmd /c start cassandra -f");
-			}
-			else
+			} else
 			{
 				System.out.println("Operating system not supported.");
 				return;
 			}
-		}
-		catch(IOException ioe)
+		} 
+		catch (IOException ioe)
 		{
 			ioe.printStackTrace();
 			System.exit(1);
 		}
-		
-		try 
+
+		try
 		{
-			//Instantiate the server socket
+			// Instantiate the server socket
 			serverSock = new ServerSocket(SOCKETPORT);
 			System.out.println("Ok, Serversocket created!");
-		}
-		catch(IOException ioe) 
+		} 
+		catch (IOException ioe)
 		{
-			ioe.printStackTrace();         
+			ioe.printStackTrace();
 		}
-		
-		while(true) 
+
+		while (true)
 		{
-			try 
+			try
 			{
-				// accept a connection, when a client is connected, a new thread is created to manage the connection
+				// accept a connection, when a client is connected, a new thread is created to
+				// manage the connection
 				// (no thread pooling)
 				clientSock = serverSock.accept();
 				System.out.println("Connection accepted, a new thread is going to be created.");
 				ConnectionThread ct = new ConnectionThread(clientSock);
 				ct.start();
-			}
-			catch(IOException ioe) 
+			} 
+			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
 			}
 		}
 	}
-	
+
 	private class ConnectionThread extends Thread
 	{
 		private Socket cliSock = null;
@@ -108,96 +104,97 @@ public class ManageDb {
 		String response = null;
 		String query = null;
 		ResultSet queryResult = null;
-		
+
 		public ConnectionThread(Socket s)
 		{
 			cliSock = s;
 		}
-		
+
 		public void run()
 		{
 			boolean done = false;
 			Scanner clientReq = null;
 			PrintWriter clientResp = null;
-			//connect to the cluster
+			// connect to the cluster
 			cluster = Cluster.builder().addContactPoint(clusterAdd).build();
 			session = cluster.connect();
 			session.execute("USE streaming;");
 			Checker check = null;
-			
+
 			try
 			{
 				clientReq = new Scanner(cliSock.getInputStream());
 				clientResp = new PrintWriter(cliSock.getOutputStream());
-			}
-			catch(IOException ioe)
+			} 
+			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
 			}
-			
-			while(!done && clientReq.hasNextLine()) 
+
+			while (!done && clientReq.hasNextLine())
 			{
 				request = clientReq.nextLine();
-				
-				// NEW PROTOCOL 
-				// Remember the format of the possible requests: 
+
+				// NEW PROTOCOL
+				// Remember the format of the possible requests:
 				// 1. GET SP ALL SP CHANNEL_NAME or
 				// 2. GET SP VIDEO SP URL (where URL is the url of the video)
-				
+
 				check = UtilitiesDb.checkQuery(request);
-				if(!check.isCorrect()) 
+				if (!check.isCorrect())
 				{
-				   response = check.getMessage();
-				   clientResp.println(response);
-	               clientResp.flush();
-				}
-				else 
+					response = check.getMessage();
+					clientResp.println(response);
+					clientResp.flush();
+				} 
+				else
 				{
 					query = check.getMessage();
 					System.out.println(query);
 					queryResult = session.execute(query);
-	   				
+
 					// manage the response for the query to the database
 					// we have to decide the appropriate response
 					response = "";
 					String resourcePath = "";
-					for(Row row : queryResult)
+					for (Row row : queryResult)
 					{
 						resourcePath += row.getString(0);
 						System.out.println(resourcePath);
 					}
-					
-					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the result of the query
-					if(resourcePath.isEmpty())
+
+					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the
+					// result of the query
+					if (resourcePath.isEmpty())
 						response = notFound;
 					else
 					{
 						response = "200 OK ";// + response;
 						clientResp.println(response);
 						clientResp.flush();
-						
-						try 
+
+						try
 						{
-							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
+							DataOutputStream dos = new DataOutputStream(
+									new BufferedOutputStream(cliSock.getOutputStream()));
 							FileInputStream fileStream = new FileInputStream(new File(resourcePath));
-							int n=0;
+							int n = 0;
 							byte[] chunck = new byte[CHUNK_SIZE];
-							while((n = fileStream.read(chunck)) != -1)
+							while ((n = fileStream.read(chunck)) != -1)
 							{
 								dos.write(chunck, 0, n);
 								dos.flush();
 							}
 							dos.close();
 							fileStream.close();
-						}
-						catch(IOException ioe3) 
-						{  
+						} 
+						catch (IOException ioe3)
+						{
 							ioe3.printStackTrace();
 						}
-						
-						
+
 					}
-					//response = UtilitiesDb.getResponse(queryResult);
+					// response = UtilitiesDb.getResponse(queryResult);
 					clientResp.println(response);
 					clientResp.flush();
 					done = true;
@@ -210,8 +207,8 @@ public class ManageDb {
 				clientReq.close();
 				clientResp.close();
 				cliSock.close();
-			}
-			catch(IOException ioe)
+			} 
+			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
 			}

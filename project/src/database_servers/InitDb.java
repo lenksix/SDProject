@@ -16,53 +16,48 @@ import com.datastax.driver.core.exceptions.*;
 /* creates the table we need for querying the urls */
 class InitDb
 {
-	public static void main(String[] args) {
+	public static void main(String[] args)
+	{
 		Cluster cluster;
 		Session session;
-		
+
 		// run cassandra in background if it is not (useful in Windows for example)
 		try
 		{
 			Runtime.getRuntime().exec("cassandra -f");
-		}
-		catch(IOException ioe)
+		} 
+		catch (IOException ioe)
 		{
 			ioe.printStackTrace();
 		}
-		
-		try 
+
+		try
 		{
 			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 			session = cluster.connect();
-			
-			//Instantiate the keyspace, with standard parameters
+
+			// Instantiate the keyspace, with standard parameters
 			session.execute("CREATE KEYSPACE IF NOT EXISTS streaming WITH replication = {"
-				+ " 'class': 'SimpleStrategy', "
-				+ " 'replication_factor': '1' "
-				+ "};" );
-			//Connect to the keyspace already instatiated
+					+ " 'class': 'SimpleStrategy', " + " 'replication_factor': '1' " + "};");
+			// Connect to the keyspace already instatiated
 			session.execute("USE streaming;");
-			//Create the table 
+			// Create the table
 			session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
-				//+ "id_channel uuid,"
-				+ "channel_name text,"
-				+ "vids set<text>, " //where list is a list of url
-				+ "PRIMARY KEY(channel_name));"); 
-			
+					// + "id_channel uuid,"
+					+ "channel_name text," + "vids set<text>, " // where list is a list of url
+					+ "PRIMARY KEY(channel_name));");
+
 			// create the table of url-path for each video
-			session.execute("CREATE TABLE IF NOT EXISTS vid_path("
-				+ "url text,"
-				+ "path text,"
-				+ "PRIMARY KEY(url));");
-		}
-		catch(NoHostAvailableException nhae) 
+			session.execute("CREATE TABLE IF NOT EXISTS vid_path(" + "url text," + "path text," + "PRIMARY KEY(url));");
+		} 
+		catch (NoHostAvailableException nhae)
 		{
-			System.out.println("Build failed: <"+ nhae.getMessage() +">");
+			System.out.println("Build failed: <" + nhae.getMessage() + ">");
 			nhae.printStackTrace();
-		}
-		catch(com.datastax.driver.core.exceptions.SyntaxError Dse) 
+		} 
+		catch (com.datastax.driver.core.exceptions.SyntaxError dse)
 		{
-			Dse.printStackTrace();
+			dse.printStackTrace();
 		}
-	} 
+	}
 }

@@ -9,133 +9,144 @@ import java.util.HashMap;
 
 import database_servers.UtilitiesDb;
 
-
-public class ServerL2 
+public class ServerL2
 {
 	private final static int SOCKETPORT = 8860;
 	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
 	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
-	
+
 	private static String dbAddress = null;
 	private static int dbPort = -1;
-	private static HashMap<String,String> vidsCache = null; // map <ID_VID, /../localpath>
-	//private static HashMap<String, String[]> namesCache = null; // map <ID_CH, Video[]> future implementation
-	
-	
-	public static void main(String[] args) {
+	private static HashMap<String, String> vidsCache = null; // map <ID_VID, /../localpath>
+	// private static HashMap<String, String[]> namesCache = null; // map <ID_CH,
+	// Video[]> future implementation
+
+	public static void main(String[] args)
+	{
 		(new ServerL2()).exec(args);
 	}
-	
-	public void exec(String[] args) {
+
+	public void exec(String[] args)
+	{
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
-		
-		
-		try 
+
+		try
 		{
-			//Instantiate the server socket
-			/*PROBLEM: We need to add the ip address of this L2 server to a common data structure for the L1 servers*/
-			serverSock = new ServerSocket(SOCKETPORT); 
+			// Instantiate the server socket
+			/*
+			 * PROBLEM: We need to add the ip address of this L2 server to a common data
+			 * structure for the L1 servers
+			 */
+			serverSock = new ServerSocket(SOCKETPORT);
 			System.out.println("Ok, Serversocket created!");
-         
-			//Need the address of the "db manager", assume this file is just for the boot, then is modified according to some protocol
+
+			// Need the address of the "db manager", assume this file is just for the boot,
+			// then is modified according to some protocol
 			BufferedReader file = new BufferedReader(new FileReader(hosts.trim()));
 			String line = file.readLine();
 			file.close();
-			
+
 			dbAddress = line.split(" ")[0];
 			dbPort = Integer.parseInt(line.split(" ")[1]);
-			
-			System.out.println("Ok, file read!" + " <"+ dbAddress + "> "+ " <" + dbPort + "> ");
-			//initialize the local cache
-			vidsCache = new HashMap<String,String>();
-			//namesCache = new HashMap<String,String[]>();
-			
+
+			System.out.println("Ok, file read!" + " <" + dbAddress + "> " + " <" + dbPort + "> ");
+			// initialize the local cache
+			vidsCache = new HashMap<String, String>();
+			// namesCache = new HashMap<String,String[]>();
+
 		} 
-		catch(IOException ioe) {
-			try {
+		catch (IOException ioe)
+		{
+			try
+			{
 				serverSock.close();
-			}
-			catch(IOException ioe2) {
+			} 
+			catch (IOException ioe2)
+			{
 				System.out.println("Failed to close serverSocket");
 				ioe2.printStackTrace();
 			}
-			ioe.printStackTrace();         
+			ioe.printStackTrace();
 		}
-		
-		
-		while(true) {
-			try {
-				// accept a connection, when a client is connected, a new thread is created to manage the connection
+
+		while (true)
+		{
+			try
+			{
+				// accept a connection, when a client is connected, a new thread is created to
+				// manage the connection
 				// (no thread pooling) for now
 				clientSock = serverSock.accept();
 				System.out.println("Connection accepted, a new thread is going to be created.");
 				ConnectionThread ct = new ConnectionThread(clientSock);
 				ct.start();
-			}
-			catch(IOException ioe) {
+			} 
+			catch (IOException ioe)
+			{
 				ioe.printStackTrace();
 			}
 		}
 	}
-   
-	private class ConnectionThread extends Thread 
+
+	private class ConnectionThread extends Thread
 	{
 		Socket clientSock = null;
 		Socket dbSock = null;
-		
-		public ConnectionThread(Socket s) {
+
+		public ConnectionThread(Socket s)
+		{
 			this.clientSock = s;
 		}
-		
-		public void run() 
+
+		public void run()
 		{
 			Scanner scannerClient = null;
 			PrintWriter pwClient = null;
 			Checker check = null;
-			
+
 			Scanner scannerDb = null;
 			PrintWriter pwDb = null;
-			
+
 			File video = null;
 			DataOutputStream dos = null;
 			FileInputStream fileStream = null;
-			
-			
-			//boolean connectStatus = connectDB(dbAddress, dbPort);
-			try 
+
+			// boolean connectStatus = connectDB(dbAddress, dbPort);
+			try
 			{
 				String query = null;
 				scannerClient = new Scanner(clientSock.getInputStream());
 				pwClient = new PrintWriter(clientSock.getOutputStream());
-				
-				while(scannerClient.hasNextLine()) 
+
+				while (scannerClient.hasNextLine())
 				{
 					// Check syntax of the request
 					query = scannerClient.nextLine();
 					check = UtilitiesL2.checkQuery(query);
-					
-					if(check.isCorrect()) 
+
+					if (check.isCorrect())
 					{
-						// 1.GET SP IN_CACHE SP ID_RISORSA 
-						// where ID_RISORSA is a video, in further development we should add a code to request also a
+						// 1.GET SP IN_CACHE SP ID_RISORSA
+						// where ID_RISORSA is a video, in further development we should add a code to
+						// request also a
 						// list of the videos of a specific channel
-						if(check.getType()==1) 
+						if (check.getType() == 1)
 						{
-							boolean ownRes = false; 
+							boolean ownRes = false;
 							String resource = null;
 							// Verify if the cache contains the resource
-							synchronized(vidsCache) 
+							synchronized (vidsCache)
 							{
-								if(vidsCache.containsKey(check.getResource()))
-								{	// NOTE!!
+								if (vidsCache.containsKey(check.getResource()))
+								{ // NOTE!!
 									// WE need to update this code by sending the video at the location
 									ownRes = true;
 									resource = vidsCache.get(check.getResource());
 								}
 							}
-							if(ownRes)
+							if (ownRes)
 							{
 								pwClient.println("200 OK");
 								pwClient.flush();
@@ -144,7 +155,7 @@ public class ServerL2
 								int n = 0;
 								byte[] chunck = new byte[1000];
 								long readBytes = 0;
-								while((n = fileStream.read(chunck)) != -1)
+								while ((n = fileStream.read(chunck)) != -1)
 								{
 									dos.write(chunck, 0, n);
 									dos.flush();
@@ -152,52 +163,53 @@ public class ServerL2
 								}
 								System.out.println("Bytes read from cache = " + readBytes);
 								fileStream.close();
-							}
+							} 
 							else
 							{
 								// We send that we don't have the resource
 								pwClient.println(notInCache);
 								pwClient.flush();
 							}
-						}
+						} 
 						else
 						{
-							// Retrieve the resource and send it to the L1 server 
+							// Retrieve the resource and send it to the L1 server
 							// and bring it in the cache -> we need to know the most recent
-							
+
 							// First: connect to db Manager
-							try 
+							try
 							{
 								dbSock = new Socket(dbAddress, dbPort);
-								
+
 								scannerDb = new Scanner(dbSock.getInputStream());
 								pwDb = new PrintWriter(dbSock.getOutputStream());
-								
+
 								String request = UtilitiesL2.queryVid(check.getResource());
 								pwDb.println(request);
 								pwDb.flush();
-								
+
 								String response = null;
 								int n = -1;
 								response = scannerDb.nextLine();
-								if(Integer.parseInt((response.split(" ")[0])) == 200)
+								if (Integer.parseInt((response.split(" ")[0])) == 200)
 								{
-									/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!!*/
+									/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
 									pwClient.println(response);
 									DataInputStream dis = null;
 									FileOutputStream fos = null;
-									
-									try 
+
+									try
 									{
 										String path = CACHE_DEFAULT_PATH + check.getResource();
-										
+
 										video = new File(path);
 										fos = new FileOutputStream(video + ".mp4");
 										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+										dos = new DataOutputStream(
+												new BufferedOutputStream(clientSock.getOutputStream()));
 										byte[] chunck = new byte[1024];
 										long readBytes = 0;
-										while((n = dis.read(chunck)) != -1)
+										while ((n = dis.read(chunck)) != -1)
 										{
 											fos.write(chunck, 0, n);
 											fos.flush();
@@ -207,23 +219,23 @@ public class ServerL2
 										}
 										System.out.println("Bytes read from database = " + readBytes);
 										fos.close();
-										synchronized(vidsCache)
+										synchronized (vidsCache)
 										{
 											vidsCache.put(check.getResource(), path);
-										}	
-									}
-									catch(IOException ioe)
+										}
+									} 
+									catch (IOException ioe)
 									{
-									   ioe.printStackTrace();
+										ioe.printStackTrace();
 									}
-								}
+								} 
 								else
 								{
 									pwClient.println("404 NOT FOUND"); /* Video non in DB */
 								}
 								dbSock.close();
-							}
-							catch(UnknownHostException uhe) 
+							} 
+							catch (UnknownHostException uhe)
 							{
 								// NOTE need to define
 								pwClient.println("AN ERROR MESSAGE");
@@ -231,24 +243,27 @@ public class ServerL2
 								uhe.printStackTrace();
 							}
 						}
-					}
-					else {
+					} 
+					else
+					{
 						// Malformed request
 						pwClient.println(check.getResource()); // send error code
 						pwClient.flush();
 						continue;
 					}
 				}
-				try 
+				try
 				{
 					dos.close();
 					clientSock.close();
-				}
-				catch(IOException ioe2) {
+				} 
+				catch (IOException ioe2)
+				{
 					ioe2.printStackTrace();
 				}
-			}
-			catch(IOException ioe) {
+			} 
+			catch (IOException ioe)
+			{
 				ioe.printStackTrace();
 			}
 		}

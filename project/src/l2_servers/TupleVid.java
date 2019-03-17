@@ -4,6 +4,6 @@ class TupleVid
 {
 	public TupleVid(String path, long timeStamp)
 	{
-		
+
 	}
 }

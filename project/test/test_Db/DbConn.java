@@ -6,25 +6,30 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 
 /*Semplice programma per verificare la connettività a cassandra*/
-public class DbConn {
+public class DbConn
+{
 
-   public static void main(String[] args) {
-      // TODO Auto-generated method stub
-      Cluster cluster = null;
-      try {
-          cluster = Cluster.builder()                                                    // (1)
-                  .addContactPoint("127.0.0.1")
-                  .build();
-          Session session = cluster.connect();                                           // (2)
+	public static void main(String[] args)
+	{
+		Cluster cluster = null;
+		try
+		{
+			cluster = Cluster.builder() 
+					.addContactPoint("127.0.0.1").build(); // (1)
+			Session session = cluster.connect(); // (2)
 
-          ResultSet rs = session.execute("select release_version from system.local");    // (3)
-          Row row = rs.one();
-          System.out.println(row.getString("release_version"));                          // (4)
-          System.out.println("Ciao");
-      } 
-      finally {
-          if (cluster != null) cluster.close();                                          // (5)
-      }
-   }
+			ResultSet rs = session.execute("select release_version from system.local"); // (3)
+			Row row = rs.one();
+			System.out.println(row.getString("release_version")); // (4)
+			System.out.println("Ciao");
+		} 
+		finally
+		{
+			if (cluster != null)
+			{
+				cluster.close(); // (5)
+			}
+		}
+	}
 
 }
