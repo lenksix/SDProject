@@ -119,7 +119,7 @@ public class ManageDb
 			cluster = Cluster.builder().addContactPoint(clusterAdd).build();
 			session = cluster.connect();
 			session.execute("USE streaming;");
-			Checker check = null;
+			CheckerDB check = null;
 
 			try
 			{

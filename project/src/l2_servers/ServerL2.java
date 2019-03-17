@@ -104,7 +104,7 @@ public class ServerL2
 		{
 			Scanner scannerClient = null;
 			PrintWriter pwClient = null;
-			Checker check = null;
+			CheckerL2 check = null;
 
 			Scanner scannerDb = null;
 			PrintWriter pwDb = null;

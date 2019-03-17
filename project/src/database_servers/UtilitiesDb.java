@@ -49,7 +49,7 @@ public class UtilitiesDb
 	 * To insert a (channel_name, url)-tuple into the channel_vids table of the DB
 	 * 
 	 * @param ch_name the name of the channel
-	 * @param url     the url of the corresponding video
+	 * @param url the url of the corresponding video
 	 * @return the query string to use to insert the tuple in the channel_vids table
 	 */
 	public static String insertChannelVids(String ch_name, String url)
@@ -97,7 +97,7 @@ public class UtilitiesDb
 	 * @return an object of type Checker with informations about the correctness of
 	 *         the request
 	 */
-	public static Checker checkQuery(String request)
+	public static CheckerDB checkQuery(String request)
 	{
 		String[] args = request.split(" ");
 
@@ -113,22 +113,22 @@ public class UtilitiesDb
 						{
 							if (j == 0)
 							{ // GET SP ALL SP CHANNEL_NAME
-								return new Checker(true, UtilitiesDb.getAllVideos(args[NUMARGS - 1]));
+								return new CheckerDB(true, UtilitiesDb.getAllVideos(args[NUMARGS - 1]));
 							} 
 							else if (j == 1)
 							{ // GET SP VIDEO SP URL
-								return new Checker(true, UtilitiesDb.getPath(args[NUMARGS - 1]));
+								return new CheckerDB(true, UtilitiesDb.getPath(args[NUMARGS - 1]));
 							}
 						}
 					}
-					return new Checker(false, "612 ERROR OPTION"); // Option doesn't exists
+					return new CheckerDB(false, "612 ERROR OPTION"); // Option doesn't exists
 				}
 			}
-			return new Checker(false, "611 ERROR METHOD"); // Method doesn't exists
+			return new CheckerDB(false, "611 ERROR METHOD"); // Method doesn't exists
 		} 
 		else
 		{
-			return new Checker(false, "610 ERROR NUM_PARAMS"); // Error on the number of parameters
+			return new CheckerDB(false, "610 ERROR NUM_PARAMS"); // Error on the number of parameters
 		}
 
 	}
