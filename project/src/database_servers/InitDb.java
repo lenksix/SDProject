@@ -22,14 +22,14 @@ class InitDb
 		Session session;
 
 		// run cassandra in background if it is not (useful in Windows for example)
-		try
+		/*try
 		{
 			Runtime.getRuntime().exec("cassandra -f");
 		} 
 		catch (IOException ioe)
 		{
 			ioe.printStackTrace();
-		}
+		}*/
 
 		try
 		{
@@ -49,6 +49,9 @@ class InitDb
 
 			// create the table of url-path for each video
 			session.execute("CREATE TABLE IF NOT EXISTS vid_path(" + "url text," + "path text," + "PRIMARY KEY(url));");
+			System.out.println("Table vid_path created!");
+			session.close();
+			cluster.close();
 		} 
 		catch (NoHostAvailableException nhae)
 		{
