@@ -12,6 +12,7 @@ import com.datastax.driver.core.exceptions.NoHostAvailableException;
 public class PopulateDb
 {
 	final static String clusterAdd = "127.0.0.1";
+	final static String keyspace = " streaming;";
 	
 	public static void main(String args[])
 	{
@@ -43,11 +44,13 @@ public class PopulateDb
 					cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 					session = cluster.connect();
 					String entry = null;
+					session.execute("USE" + keyspace);
 					if(currentLine.equals("vid_path"))
 					{
 						while((currentLine = reader.readLine()) != null)
 						{
 							entry = UtilitiesDb.insertUrlPath(currentLine.split(" ")[0].trim(), currentLine.split(" ")[1].trim());
+							session.execute(entry);
 							System.out.println(entry);
 						}
 					}
