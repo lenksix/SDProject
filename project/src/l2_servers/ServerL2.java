@@ -6,8 +6,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.HashMap;
+import org.apache.commons.io.FilenameUtils;
 
-import database_servers.UtilitiesDb;
 
 public class ServerL2
 {
@@ -15,10 +15,11 @@ public class ServerL2
 	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
 	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
+	private final static String[] formats = {".mp4", ".avi", ".mkv"};
 
 	private static String dbAddress = null;
 	private static int dbPort = -1;
-	private static HashMap<String, String> vidsCache = null; // map <ID_VID, /../localpath>
+	private static HashMap<String, TupleVid> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
 	// private static HashMap<String, String[]> namesCache = null; // map <ID_CH,
 	// Video[]> future implementation
 
@@ -53,12 +54,41 @@ public class ServerL2
 
 			System.out.println("Ok, file read!" + " <" + dbAddress + "> " + " <" + dbPort + "> ");
 			// initialize the local cache
-			vidsCache = new HashMap<String, String>();
-			// namesCache = new HashMap<String,String[]>();
+			vidsCache = new HashMap<String, TupleVid>();
+			
+			// if the cache goes down we have to restore in vidsCache all the videos
+			// TODO: decide how to restore the videos. For now we put in the vidsCache all the videos with timestamp equal to the moment when they are found.
+			// Open the default folder of the cache
+			File folder = new File("media/media_cache");
+			for(File fileFound : folder.listFiles()) 
+			{
+				if(fileFound.isDirectory()) 
+				{ } 	// TODO: need to decide if we find a directory
+				else
+				{
+					for(String format : formats) // for every file check if it is a video (if it ends with one the formats defined above)
+					{
+						if(fileFound.getName().endsWith(format))
+						{
+							String id_vid = FilenameUtils.removeExtension(fileFound.getName());
+							vidsCache.put(id_vid, new TupleVid(fileFound.getPath(), System.currentTimeMillis()));
+						}
+					}
+		        }
+		    }
+			vidsCache.forEach((x,y)->
+			{
+				System.out.println("Filename = " + FilenameUtils.removeExtension(x));
+				System.out.println("Path = " + y.getPath());
+				System.out.println("Timestamp = " + y.getTimeStamp());
+			});
+			
+			//TODO: we have to implement the garbage collection
 
 		} 
 		catch (IOException ioe)
 		{
+			ioe.printStackTrace();
 			try
 			{
 				serverSock.close();
@@ -68,7 +98,6 @@ public class ServerL2
 				System.out.println("Failed to close serverSocket");
 				ioe2.printStackTrace();
 			}
-			ioe.printStackTrace();
 		}
 
 		while (true)
@@ -140,10 +169,10 @@ public class ServerL2
 							synchronized (vidsCache)
 							{
 								if (vidsCache.containsKey(check.getResource()))
-								{ // NOTE!!
+								{ 	// NOTE!!
 									// WE need to update this code by sending the video at the location
 									ownRes = true;
-									resource = vidsCache.get(check.getResource());
+									resource = vidsCache.get(check.getResource()).getPath();
 								}
 							}
 							if (ownRes)
@@ -151,7 +180,7 @@ public class ServerL2
 								pwClient.println("200 OK");
 								pwClient.flush();
 								dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-								fileStream = new FileInputStream(new File(resource + ".mp4"));
+								fileStream = new FileInputStream(new File(resource));
 								int n = 0;
 								byte[] chunck = new byte[1000];
 								long readBytes = 0;
@@ -195,6 +224,7 @@ public class ServerL2
 								{
 									/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
 									pwClient.println(response);
+									pwClient.flush();
 									DataInputStream dis = null;
 									FileOutputStream fos = null;
 
@@ -205,8 +235,7 @@ public class ServerL2
 										video = new File(path);
 										fos = new FileOutputStream(video + ".mp4");
 										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-										dos = new DataOutputStream(
-												new BufferedOutputStream(clientSock.getOutputStream()));
+										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
 										byte[] chunck = new byte[1024];
 										long readBytes = 0;
 										while ((n = dis.read(chunck)) != -1)
@@ -221,7 +250,7 @@ public class ServerL2
 										fos.close();
 										synchronized (vidsCache)
 										{
-											vidsCache.put(check.getResource(), path);
+											vidsCache.put(check.getResource(), new TupleVid(path, System.currentTimeMillis()));
 										}
 									} 
 									catch (IOException ioe)
