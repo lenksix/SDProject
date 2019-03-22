@@ -56,6 +56,11 @@ public class ServerL2
 			// initialize the local cache
 			vidsCache = new HashMap<String, TupleVid>();
 			
+			//***** TEST *******
+			//CacheCleaner cc = new CacheCleaner(vidsCache, 1000);
+			//cc.run();
+			//System.exit(1);
+			
 			// if the cache goes down we have to restore in vidsCache all the videos
 			// TODO: decide how to restore the videos. For now we put in the vidsCache all the videos with timestamp equal to the moment when they are found.
 			// Open the default folder of the cache
