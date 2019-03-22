@@ -67,6 +67,7 @@ public class CacheCleaner implements Runnable
 			catch (InterruptedException ie)
 			{
 				ie.printStackTrace();
+				(new CacheCleaner(vidsCache, TIMELIMIT)).run(); //maybe...
 			}
 		}
 	}
