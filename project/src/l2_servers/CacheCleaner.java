@@ -1,10 +1,3 @@
-package l2_servers;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 /*********************************
  * This class will act as a "garbage collector" for the cache 
  * we still have to decide the policy, by the way, once reached a certain timeout or a certain 
@@ -14,64 +7,81 @@ import java.util.Set;
  *
  */
 
+package l2_servers;
+
+import java.io.*;
+import java.util.*;
+import javafx.util.*;
+import java.util.concurrent.locks.*;
+
 public class CacheCleaner implements Runnable
-{	
-	private static HashMap<String, TupleVid> vidsCache = null;
-	private static int TIMELIMIT;
-	private final static long SLEEP_TIME = 2000L; // Milliseconds 
-	private static ArrayList<String> toRemove = null;
+{
+	private HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache = null;
+	private Lock vcLock = null;
+	private int TIMELIMIT;
+	private final long SLEEP_TIME = 2000L; // Milliseconds 
+	private final File root = new File("/");
 	
-	public CacheCleaner(HashMap<String, TupleVid> vidsCache, int TIMELIMIT)
+	public CacheCleaner(HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache, ReentrantLock vcLock, int TIMELIMIT)
 	{
-		CacheCleaner.vidsCache = vidsCache;
-		CacheCleaner.TIMELIMIT = TIMELIMIT;
+		this.vidsCache = vidsCache;
+		this.vcLock = vcLock;
+		this.TIMELIMIT = TIMELIMIT;
 	}
 	
+	@Override
 	public void run() 
 	{
-		while(true)
+		try
 		{
-			try
-			{
+			while(true)
+			{	
 				// Problem: DRIFT we have to fix it
 				//System.out.println("i'm going to sleep at :<" + System.currentTimeMillis() + ">");
 				Thread.currentThread();
 				Thread.sleep(SLEEP_TIME);
-				//System.out.println("I woke up at :<" + System.currentTimeMillis() + ">");
+				System.out.println("I woke up at :<" + System.currentTimeMillis() + ">");
+				System.out.println("Disk usage = " + root.getTotalSpace());
+				System.out.println("Disk free = " + root.getFreeSpace());
 				
-				synchronized(vidsCache)
+				// Lock of vidsCache
+				/*
+				vcLock.lock();
+				try
 				{
-					Set<String> keys = vidsCache.keySet();
-					for(String videoId: keys)
-					{
-						TupleVid video = vidsCache.get(videoId);
-						long insertTime = video.getTimeStamp(); 
-						if(System.currentTimeMillis() >= (insertTime + TIMELIMIT))
+					vidsCache.forEach((id_vid, pair)->{
+						try 
 						{
-							toRemove.add(video.getPath()); // we have to physically remove this video!
-							vidsCache.remove(videoId); // first remove from the cache
+							pair.getValue().writeLock().lock();	// lock of the element inside the vidsCache
+							vcLock.unlock();					// now I can unlock the vidsCache
+							TupleVid actual_tv = pair.getKey();
+							if(actual_tv.getTimeStamp() < System.currentTimeMillis()-TIMELIMIT)
+							{
+								// QUA SE VOGLIO RIMUOVERE DA vidsCache DEVO RIPRENDEMI IL LOCK !?
+								File file = new File(pair.getKey().getPath());
+								file.delete();
+								vidsCache.remove(id_vid);
+							}
+							
 						}
-					}
-					// now truly removing the files from the cache.
-					for(int i=0; i < toRemove.size(); ++i)
-					{
-						String pathToVideo = toRemove.get(i);
-						File file = new File(pathToVideo);
-						if(file.delete())
+						finally
 						{
-							System.out.println("Correct deletion");
-						}	
-					}
-					toRemove.clear(); // empty the files to remove
+							pair.getValue().writeLock().unlock();
+						}
+						
+					});
 				}
+				finally
+				{
+					vcLock.unlock();
+				}
+				*/
 				
-			} 
-			catch (InterruptedException ie)
-			{
-				ie.printStackTrace();
-				// THIS IS NOT GOOD -> stackoverflowerror possible!!
-				(new CacheCleaner(vidsCache, TIMELIMIT)).run(); // attempt to restart a cleaner after one is dumped
 			}
+		}
+		catch(InterruptedException ie)
+		{
+			ie.printStackTrace();
 		}
 	}
 }
