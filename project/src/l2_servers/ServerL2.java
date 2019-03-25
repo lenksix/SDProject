@@ -7,6 +7,8 @@ import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.HashMap;
 import org.apache.commons.io.FilenameUtils;
+import javafx.util.*;
+import java.util.concurrent.locks.*;
 
 
 public class ServerL2
@@ -19,7 +21,7 @@ public class ServerL2
 
 	private static String dbAddress = null;
 	private static int dbPort = -1;
-	private static HashMap<String, TupleVid> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
+	private static HashMap<String, Pair<TupleVid, ReadWriteLock>> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
 	// private static HashMap<String, String[]> namesCache = null; // map <ID_CH,
 	// Video[]> future implementation
 
@@ -178,10 +180,15 @@ public class ServerL2
 									// WE need to update this code by sending the video at the location
 									ownRes = true;
 									resource = vidsCache.get(check.getResource()).getPath();
+									//Not so sure...
+									vidsCache.replace(check.getResource(), new TupleVid(resource, System.currentTimeMillis()));
 								}
 							}
 							if (ownRes)
 							{
+							
+								// WRONGGGGGG!!!!!!!!!!!!!!!!!
+								// CONCURRENCY
 								pwClient.println("200 OK");
 								pwClient.flush();
 								dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
@@ -237,6 +244,8 @@ public class ServerL2
 									{
 										String path = CACHE_DEFAULT_PATH + check.getResource();
 
+										// WRONGGGGGG!!!!!!!!!!!!!!!!!
+										// CONCURRENCY
 										video = new File(path);
 										fos = new FileOutputStream(video + ".mp4");
 										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));

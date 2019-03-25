@@ -38,6 +38,7 @@ public class CacheCleaner implements Runnable
 				Thread.currentThread();
 				Thread.sleep(SLEEP_TIME);
 				//System.out.println("I woke up at :<" + System.currentTimeMillis() + ">");
+				
 				synchronized(vidsCache)
 				{
 					Set<String> keys = vidsCache.keySet();
