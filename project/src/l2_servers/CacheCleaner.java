@@ -51,23 +51,25 @@ public class CacheCleaner implements Runnable
 							vidsCache.remove(videoId); // first remove from the cache
 						}
 					}
-				}
-				// now truly removing the files from the cache.. maybe this code goes inside the sync.
-				for(int i=0; i < toRemove.size(); ++i)
-				{
-					String pathToVideo = toRemove.get(i);
-					File file = new File(pathToVideo);
-					if(file.delete())
+					// now truly removing the files from the cache.
+					for(int i=0; i < toRemove.size(); ++i)
 					{
-						System.out.println("Correct deletion");
-					}	
+						String pathToVideo = toRemove.get(i);
+						File file = new File(pathToVideo);
+						if(file.delete())
+						{
+							System.out.println("Correct deletion");
+						}	
+					}
+					toRemove.clear(); // empty the files to remove
 				}
-				toRemove.clear(); // empty the files to remove
+				
 			} 
 			catch (InterruptedException ie)
 			{
 				ie.printStackTrace();
-				(new CacheCleaner(vidsCache, TIMELIMIT)).run(); //maybe...
+				// THIS IS NOT GOOD -> stackoverflowerror possible!!
+				(new CacheCleaner(vidsCache, TIMELIMIT)).run(); // attempt to restart a cleaner after one is dumped
 			}
 		}
 	}
