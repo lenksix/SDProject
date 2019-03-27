@@ -6,6 +6,7 @@
 
 package l2_servers;
 
+
 class TupleVid
 {
 	private String path;	// TODO: decide if the path must be final 
