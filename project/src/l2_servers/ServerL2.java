@@ -19,6 +19,9 @@ public class ServerL2
 	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
 	private final static String[] formats = {".mp4", ".avi", ".mkv"};
 	private final static int CHUNKSIZE = 1000; // size of each chunk of the file in bytes
+	private final static int DEF_RECEIVING_VID = 0;
+	private final static int OK = 200;
+	
 
 	private static String dbAddress = null;
 	private static int dbPort = -1;
@@ -26,7 +29,7 @@ public class ServerL2
 	private static ReentrantLock lockMap = null;
 	// private static HashMap<String, String[]> namesCache = null; // map <ID_CH,
 	// Video[]> future implementation
-
+	
 	public static void main(String[] args)
 	{
 		(new ServerL2()).exec(args);
@@ -176,10 +179,11 @@ public class ServerL2
 						// list of the videos of a specific channel
 						if (check.getType() == 1)
 						{
-							boolean ownRes = false;
+							//boolean ownRes = false;
 							Pair<TupleVid, ReentrantReadWriteLock> resource = null;
 							String videoCachePath = null;
 							Lock lockfileRead = null;
+							Lock lockfileWrite = null;
 							// Verify if the cache contains the resource
 							// Brand new Section!!
 							try
@@ -188,15 +192,55 @@ public class ServerL2
 								if (vidsCache.containsKey(check.getResource()))
 								{ 	// NOTE!!
 									// WE need to update this code by sending the video at the location
-									ownRes = true;
+									//ownRes = true;
 									resource = vidsCache.get(check.getResource());
 									//get the read lock to the file
-									lockfileRead = resource.getValue().readLock();
+									lockfileRead = resource.getValue().readLock(); // recall <key_tuple, value=rwlock>
+									lockfileWrite = resource.getValue().writeLock();
 									videoCachePath = resource.getKey().getPath();
-									resource.getKey().setTimeStamp(System.currentTimeMillis());
-									// don't need to reinsert the same object, the timestamp is already changed!
-									//Not so sure...
-									//vidsCache.replace(check.getResource(), new TupleVid(resource, System.currentTimeMillis()));
+
+									try
+									{
+										// need to read the resource
+										lockfileRead.lock();
+										lockMap.unlock();
+										
+										// update the timestamp since the resource was already required, 
+										// if the timestamp is 0 this also works since 
+										lockfileWrite.lock();
+										resource.getKey().setTimeStamp(System.currentTimeMillis());
+										lockfileWrite.unlock();
+										
+										//Now that i have the read lock and I know file is ok, I can send the file!
+										pwClient.println("200 OK");
+										pwClient.flush();
+										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+										fileStream = new FileInputStream(new File(videoCachePath));
+										int n = 0;
+										byte[] chunck = new byte[CHUNKSIZE];
+										long readBytes = 0;
+										while ((n = fileStream.read(chunck)) != -1)
+										{
+											dos.write(chunck, 0, n);
+											dos.flush();
+											readBytes += n;
+										}
+										System.out.println("Bytes read from cache = " + readBytes);
+										fileStream.close();
+										
+									}
+									catch(IOException ioe)
+									{
+										System.err.println("For some reason file was not found");
+										ioe.printStackTrace();
+									}
+									finally
+									{
+										if(lockMap.isHeldByCurrentThread())
+										{
+											lockfileRead.unlock();
+										}
+									}	
 								}
 								else
 								{
@@ -208,38 +252,12 @@ public class ServerL2
 							}
 							finally
 							{
-								lockMap.unlock();
-							}
-							//trying to send the video if i have it in cache
-							if(ownRes)
-							{
-								try
-								{
-									lockfileRead.lock();
-									
-									//Now that i have the read lock i can send the file!
-									pwClient.println("200 OK");
-									pwClient.flush();
-									dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-									fileStream = new FileInputStream(new File(videoCachePath));
-									int n = 0;
-									byte[] chunck = new byte[CHUNKSIZE];
-									long readBytes = 0;
-									while ((n = fileStream.read(chunck)) != -1)
-									{
-										dos.write(chunck, 0, n);
-										dos.flush();
-										readBytes += n;
-									}
-									System.out.println("Bytes read from cache = " + readBytes);
-									fileStream.close();
-									
-								}
-								finally
+								if(lockMap.isHeldByCurrentThread())
 								{
 									lockfileRead.unlock();
 								}
 							}
+							
 						} 
 						else
 						{
@@ -261,57 +279,75 @@ public class ServerL2
 								String response = null;
 								int n = -1;
 								response = scannerDb.nextLine();
-								if (Integer.parseInt((response.split(" ")[0])) == 200)
+								if (Integer.parseInt((response.split(" ")[0])) == OK)
 								{
-									/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
-									pwClient.println(response);
-									pwClient.flush();
-									DataInputStream dis = null;
-									FileOutputStream fos = null;
-
+									ReentrantReadWriteLock rwlRes;
+									Lock writeFile;
 									try
 									{
+										pwClient.println(response);
+										pwClient.flush();
+										DataInputStream dis = null;
+										FileOutputStream fos = null;
 										String path = CACHE_DEFAULT_PATH + check.getResource();
 
-										// WRONGGGGGG!!!!!!!!!!!!!!!!!
-										// CONCURRENCY
-										video = new File(path);
-										fos = new FileOutputStream(video + ".mp4");
-										dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-										byte[] chunck = new byte[CHUNKSIZE];
-										long readBytes = 0;
-										while ((n = dis.read(chunck)) != -1)
+										lockMap.lock();
+										//Insert the video in the "cache"
+										TupleVid newRes = new TupleVid(check.getResource(), DEF_RECEIVING_VID);
+										rwlRes = new ReentrantReadWriteLock(true); // not so sure
+										if(vidsCache.put(check.getResource(), new Pair<TupleVid, ReentrantReadWriteLock>(newRes, rwlRes)) != null)
 										{
-											fos.write(chunck, 0, n);
-											fos.flush();
-											dos.write(chunck, 0, n);
-											dos.flush();
-											readBytes += n;
+											System.out.println("Some concurrency problem, the resource was already present in the map!!");
 										}
+										// get the write lock
+										writeFile = rwlRes.writeLock();
+										writeFile.lock();
+										//release the lock on the cache
+										lockMap.unlock();
 										
-										System.out.println("Bytes read from database = " + readBytes);
-										fos.close();
+										/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
+										
 										try
 										{
-											lockMap.lock();
-											//Insert the video in the "cache"
-											TupleVid newRes = new TupleVid(check.getResource(), System.currentTimeMillis());
-											ReentrantReadWriteLock rwlRes = new ReentrantReadWriteLock(true);
-											if(vidsCache.put(check.getResource(), new Pair<TupleVid, ReentrantReadWriteLock>(newRes, rwlRes)) != null)
+											video = new File(path);
+											fos = new FileOutputStream(video + ".mp4");
+											dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
+											dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+											byte[] chunck = new byte[CHUNKSIZE];
+											long readBytes = 0;
+											while ((n = dis.read(chunck)) != -1)
 											{
-												System.out.println("Some concurrency problem, the resource was already present in the map!!");
+												fos.write(chunck, 0, n);
+												fos.flush();
+												dos.write(chunck, 0, n);
+												dos.flush();
+												readBytes += n;
 											}
+											
+											System.out.println("Bytes read from database = " + readBytes);
+											fos.close();
+											
 										}
-										finally
+										catch (IOException ioe)
+										{
+											ioe.printStackTrace();
+										}
+										// Video know is in cache we have to set the right timestamp
+										vidsCache.get(check.getResource()).getKey().setTimeStamp(System.currentTimeMillis());
+										/*
+										 * HERE WE MUST SIGNAL ON THE CONDITION OF THE READLOCK
+										 */
+										writeFile.unlock();
+										
+									}
+									finally
+									{
+										if(lockMap.isHeldByCurrentThread())
 										{
 											lockMap.unlock();
 										}
-									} 
-									catch (IOException ioe)
-									{
-										ioe.printStackTrace();
 									}
+									
 								} 
 								else
 								{
