@@ -18,11 +18,11 @@ public class CacheCleaner implements Runnable
 {
 	private HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache = null;
 	private Lock vcLock = null;
-	private int time_limit;
+	private long time_limit;
 	private long sleep_time = 2048L; // Milliseconds 
 	private final File root_dir = new File("/");
 	
-	public CacheCleaner(HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache, ReentrantLock vcLock, int time_limit)
+	public CacheCleaner(HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache, ReentrantLock vcLock, long time_limit)
 	{
 		this.vidsCache = vidsCache;
 		this.vcLock = vcLock;
@@ -95,5 +95,10 @@ public class CacheCleaner implements Runnable
 		{
 			ie.printStackTrace();
 		}
+	}
+	
+	public synchronized long getTimeLimit()
+	{
+		return time_limit;
 	}
 }

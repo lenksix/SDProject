@@ -16,13 +16,14 @@ public class ServerL2
 	private final static int SOCKETPORT = 8860;
 	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
+	private final static String notUpdated = "702 NOT UPDATED";
 	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
 	private final static String[] formats = {".mp4", ".avi", ".mkv"};
 	private final static int CHUNKSIZE = 1000; // size of each chunk of the file in bytes
 	private final static int DEF_RECEIVING_VID = 0;
 	private final static int OK = 200;
-	
 
+	private static CacheCleaner cc;
 	private static String dbAddress = null;
 	private static int dbPort = -1;
 	private static HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
@@ -63,8 +64,9 @@ public class ServerL2
 			// initialize the local cache
 			vidsCache = new HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>>();
 			lockMap = new ReentrantLock();
+			long time_limit = 2048L;
 			//***** TEST *******
-			//CacheCleaner cc = new CacheCleaner(vidsCache, 1000);
+			 cc = new CacheCleaner(vidsCache, lockMap, time_limit);
 			//cc.run();
 			//System.exit(1);
 			
@@ -171,46 +173,61 @@ public class ServerL2
 					query = scannerClient.nextLine();
 					check = UtilitiesL2.checkQuery(query);
 
-					if (check.isCorrect())
+					if (!check.isCorrect())
+					{
+						// Malformed request
+						pwClient.println(check.getResource()); // send error code
+						pwClient.flush();
+					}
+					else
 					{
 						// 1.GET SP IN_CACHE SP ID_RISORSA
 						// where ID_RISORSA is a video, in further development we should add a code to
-						// request also a
-						// list of the videos of a specific channel
+						// request also a list of the videos of a specific channel
 						if (check.getType() == 1)
 						{
 							//boolean ownRes = false;
 							Pair<TupleVid, ReentrantReadWriteLock> resource = null;
 							String videoCachePath = null;
-							Lock lockfileRead = null;
-							Lock lockfileWrite = null;
+							//Lock lockfileRead = null;
 							// Verify if the cache contains the resource
 							// Brand new Section!!
 							try
 							{
 								lockMap.lock();
-								if (vidsCache.containsKey(check.getResource()))
+								if(!vidsCache.containsKey(check.getResource()))
+								{
+									// We send that we don't have the resource
+									pwClient.println(notInCache);
+									pwClient.flush();
+								}
+								resource = vidsCache.get(check.getResource());
+								if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) // Aggiungere controllo timestamps
+								{
+									// We send that the resource is not updated
+									pwClient.println(notUpdated);
+									pwClient.flush();
+								}
+								else
 								{ 	// NOTE!!
 									// WE need to update this code by sending the video at the location
 									//ownRes = true;
-									resource = vidsCache.get(check.getResource());
 									//get the read lock to the file
-									lockfileRead = resource.getValue().readLock(); // recall <key_tuple, value=rwlock>
-									lockfileWrite = resource.getValue().writeLock();
+									//lockfileRead = resource.getValue().readLock(); // recall <key_tuple, value=rwlock>
+									//lockfileWrite = resource.getValue().writeLock();
 									videoCachePath = resource.getKey().getPath();
 
 									try
 									{
 										// need to read the resource
-										lockfileRead.lock();
+										resource.getValue().readLock().lock();
+									}
+									finally
+									{
 										lockMap.unlock();
-										
-										// update the timestamp since the resource was already required, 
-										// if the timestamp is 0 this also works since 
-										lockfileWrite.lock();
-										resource.getKey().setTimeStamp(System.currentTimeMillis());
-										lockfileWrite.unlock();
-										
+									}
+									try 
+									{
 										//Now that i have the read lock and I know file is ok, I can send the file!
 										pwClient.println("200 OK");
 										pwClient.flush();
@@ -228,34 +245,24 @@ public class ServerL2
 										System.out.println("Bytes read from cache = " + readBytes);
 										fileStream.close();
 										
+										
 									}
 									catch(IOException ioe)
 									{
 										System.err.println("For some reason file was not found");
 										ioe.printStackTrace();
-									}
+									}	
 									finally
 									{
-										if(lockMap.isHeldByCurrentThread())
-										{
-											lockfileRead.unlock();
-										}
-									}	
-								}
-								else
-								{
-									// We send that we don't have the resource
-									pwClient.println(notInCache);
-									pwClient.flush();
+											resource.getValue().readLock().unlock();
+									}
+									
 								}
 								
 							}
-							finally
+							catch(Exception e)
 							{
-								if(lockMap.isHeldByCurrentThread())
-								{
-									lockfileRead.unlock();
-								}
+								//TODO: Just for debug need to restructure this
 							}
 							
 						} 
@@ -291,20 +298,30 @@ public class ServerL2
 										FileOutputStream fos = null;
 										String path = CACHE_DEFAULT_PATH + check.getResource();
 
-										lockMap.lock();
-										//Insert the video in the "cache"
-										TupleVid newRes = new TupleVid(check.getResource(), DEF_RECEIVING_VID);
-										rwlRes = new ReentrantReadWriteLock(true); // not so sure
-										if(vidsCache.put(check.getResource(), new Pair<TupleVid, ReentrantReadWriteLock>(newRes, rwlRes)) != null)
+										try 
 										{
-											System.out.println("Some concurrency problem, the resource was already present in the map!!");
+											lockMap.lock();
+											if(vidsCache.containsKey(check.getResource()))
+											// TODO: check the timestamp!!! Also Send the resource to the client
+											{
+												System.err.println("The resource is already in the cache (someone is writing it probably");
+											}
+											//Insert the video in the "cache"
+											TupleVid newRes = new TupleVid(check.getResource(), DEF_RECEIVING_VID);
+											rwlRes = new ReentrantReadWriteLock(true); // not so sure
+											if(vidsCache.put(check.getResource(), new Pair<TupleVid, ReentrantReadWriteLock>(newRes, rwlRes)) != null)
+											{
+												System.err.println("Some concurrency problem, the resource was already present in the map!!");
+											}
+											// get the write lock
+											writeFile = rwlRes.writeLock();
+											writeFile.lock();
+											//release the lock on the cache
 										}
-										// get the write lock
-										writeFile = rwlRes.writeLock();
-										writeFile.lock();
-										//release the lock on the cache
-										lockMap.unlock();
-										
+										finally
+										{
+											lockMap.unlock();
+										}
 										/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
 										
 										try
@@ -364,13 +381,10 @@ public class ServerL2
 							}
 						}
 					} 
-					else
+					/*else
 					{
-						// Malformed request
-						pwClient.println(check.getResource()); // send error code
-						pwClient.flush();
-						continue;
-					}
+						
+					}*/
 				}
 				try
 				{

@@ -50,7 +50,8 @@ public class UtilitiesL2
 				}
 			}
 			return new CheckerL2(false, -1, "621 ERROR METHOD"); // Method doesn't exists
-		} else
+		} 
+		else
 		{
 			return new CheckerL2(false, -1, "620 ERROR NUM_PARAMS"); // Error on the number of parameters
 		}
