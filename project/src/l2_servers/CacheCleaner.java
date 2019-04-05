@@ -43,11 +43,43 @@ public class CacheCleaner implements Runnable
 				System.out.println("I woke up at :<" + System.currentTimeMillis() + ">");
 				System.out.println("Disk usage = " + root_dir.getTotalSpace());
 				System.out.println("Disk free = " + root_dir.getFreeSpace());
+				System.out.println("I slept: <" + sleep_time + ">");
+				System.out.println("Time limit is: <" + time_limit + ">");
 				
 				// Lock of vidsCache
 				vcLock.lock();
 				try
 				{
+					Iterator<Map.Entry<String, Pair<TupleVid, ReentrantReadWriteLock>>> it = vidsCache.entrySet().iterator();
+					while(it.hasNext())
+					{
+						Map.Entry<String, Pair<TupleVid, ReentrantReadWriteLock>> entry = it.next();
+						boolean updated = true;
+						try 
+						{
+							entry.getValue().getValue().writeLock().lock();
+							
+							long insert_time = entry.getValue().getKey().getTimeStamp();
+							System.out.println("Rresource is in cache from : <" + (System.currentTimeMillis() - insert_time) + ">");
+							if((insert_time < System.currentTimeMillis()-time_limit))
+							{
+								updated = false;
+								File file = new File(entry.getValue().getKey().getPath());
+								System.out.println("Path of the resource is: <" +entry.getValue().getKey().getPath()+ ">");
+								file.delete();
+							}
+						}
+						finally
+						{
+							entry.getValue().getValue().writeLock().lock();
+						}
+						if(!updated)
+						{
+							System.out.println("Deleted key <" + entry.getKey() +">");
+							vidsCache.remove(entry.getKey());
+						}
+					}
+					/*
 					vidsCache.forEach((id_vid, pair)->{
 						try 
 						{
@@ -56,7 +88,8 @@ public class CacheCleaner implements Runnable
 							
 							// if the timestamp of the current tuple is zero then another thread is retrieving the resource from the database
 							// so the cleaner does not have to remove it since other thread can wait without asking again in the database
-							if((insert_time != 0) && (insert_time < System.currentTimeMillis()-time_limit))
+							//if((insert_time != 0) && (insert_time < System.currentTimeMillis()-time_limit))
+							if((insert_time < System.currentTimeMillis()-time_limit))
 							{
 								File file = new File(pair.getKey().getPath());
 								file.delete();
@@ -68,18 +101,24 @@ public class CacheCleaner implements Runnable
 						{
 							pair.getValue().writeLock().unlock();
 						}
-					});
+					});*/
 					
 					// check how much memory is free
 					// TODO: decide if this can be done without keeping the lock of the map
 					// now the policy will be 80%-20%
-					double free_space_percent = root_dir.getFreeSpace() / root_dir.getTotalSpace() * 100;
-					if(free_space_percent > 80)
+					/*
+					long first = root_dir.getTotalSpace();
+					long second = root_dir.getFreeSpace();
+					double ratio =  (double) second / first;
+					System.out.println("Ratio is <" + ratio + ">"); */
+					double free_space_percent = ((double)root_dir.getFreeSpace() /root_dir.getTotalSpace()) * 100;
+					System.out.println("Free space is <" + free_space_percent + ">");
+					if(free_space_percent > 70)
 					{
-						time_limit *= 2;
-						sleep_time *= 2;
+						time_limit *= 1.5;
+						sleep_time *= 1.5;
 					}
-					else if(free_space_percent < 20)
+					else if(free_space_percent < 30)
 					{
 						time_limit = (time_limit == 1)? time_limit : (time_limit/2);
 						sleep_time = (sleep_time == 1)? sleep_time : (sleep_time/2);
