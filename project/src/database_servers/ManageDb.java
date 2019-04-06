@@ -93,6 +93,15 @@ public class ManageDb
 			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
+				try
+				{
+					serverSock.close();
+				} 
+				catch (IOException ioe2)
+				{
+					System.out.println("Failed to close serverSocket Database!");
+					ioe2.printStackTrace();
+				}
 			}
 		}
 	}

@@ -3,10 +3,16 @@ package proxies_frontend;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ProxyFrontend
 {
 	final static int DEFAULT_PORT = 9856;
+	
+	private static HashMap<String, Integer> l2List; // list of L2 servers <IP, PORT>
+	private static ReentrantLock listLock; // need the lock for the updates on l2 list
+	
 	public static void main(String[] args)
 	{
 		(new ProxyFrontend()).exec(args);
@@ -21,6 +27,15 @@ public class ProxyFrontend
 		{
 			serverSock = new ServerSocket(DEFAULT_PORT);
 			System.out.println("Ok, Serversocket <proxy> created!");
+			
+			l2List = new HashMap<String, Integer>(); 
+			
+			//TODO: need a distributed structure of l2 servers!!
+			
+			l2List.put("localhost",8860); // just for test
+			
+			//TODO: need to instantiate a class that updates the map.. pings etc..
+			
 			
 		}
 		catch(IOException ioe)
