@@ -21,8 +21,10 @@ public class ServerL2
 	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
 	private final static String[] formats = {".mp4", ".avi", ".mkv"};
 	private final static int CHUNKSIZE = 1000; // size of each chunk of the file in bytes
-	private final static int DEF_RECEIVING_VID = 0;
+	//private final static int DEF_RECEIVING_VID = 0;
 	private final static int OK = 200;
+	
+	private final static int VERBOSE = 100;
 
 	private static CacheCleaner cc;
 	private static String dbAddress = null;
@@ -199,6 +201,10 @@ public class ServerL2
 								lockMap.lock();
 								if(!vidsCache.containsKey(check.getResource()))
 								{
+									if(VERBOSE >= 50)
+									{
+										System.out.println("The resource: <" + check.getResource() + "> is not in cache");
+									}
 									// We send that we don't have the resource
 									pwClient.println(notInCache);
 									pwClient.flush();
@@ -206,10 +212,18 @@ public class ServerL2
 								}
 								// get the resource since it is in cache
 								resource = vidsCache.get(check.getResource());
+								if(VERBOSE >= 50)
+								{
+									System.out.println("Already accessed map for resource: <" + check.getResource() + ">");
+								}
 								// check if the resource is still updated 
-								// TODO: find a way to manage the timestamp since we don't have an object cc!!!
+								// TODO: improve the way cc is accessed
 								if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
 								{
+									if(VERBOSE >= 50)
+									{
+										System.out.println("The resource: <" + check.getResource() + "> is not updated");
+									}
 									// We send that the resource is not updated
 									pwClient.println(notUpdated);
 									pwClient.flush();
@@ -217,6 +231,10 @@ public class ServerL2
 								}
 								else
 								{ 	
+									if(VERBOSE >= 50)
+									{
+										System.out.println("Getting: <" + check.getResource() + "> from cache");
+									}
 									//get the path of the resource
 									videoCachePath = resource.getKey().getPath();
 									// need to read the resource so need the read lock
@@ -225,15 +243,27 @@ public class ServerL2
 							}
 							finally
 							{
+								if(VERBOSE >= 50)
+								{
+									System.out.println("Unlocked map");
+								}
 								// i don't need the lock on the map since i have the lock on the resource
 								lockMap.unlock();
 							}
 							try 
 							{
+								if(VERBOSE >= 50)
+								{
+									System.out.println("reading the file: <" + videoCachePath + "> and sending it");
+								}
 								//Now that i have the read lock and I know file is readable, I can send the file!
 								pwClient.println("200 OK");
 								pwClient.flush();
-								dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+								// !! TRIAL- don't know if needed 
+								if(dos == null)
+								{
+									dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+								}
 								fileStream = new FileInputStream(new File(videoCachePath));
 								int n = 0;
 								byte[] chunck = new byte[CHUNKSIZE];
@@ -305,7 +335,10 @@ public class ServerL2
 											//Now that i have the read lock and I know file is readable, I can send the file!
 											pwClient.println("200 OK");
 											pwClient.flush();
-											dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+											if(dos==null)
+											{
+												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+											}
 											fileStream = new FileInputStream(new File(videoCachePath));
 											int n1 = 0;
 											byte[] chunck = new byte[CHUNKSIZE];
@@ -359,7 +392,10 @@ public class ServerL2
 												video = new File(path);
 												fos = new FileOutputStream(video + ".mp4");
 												dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+												if(dos == null)
+												{
+													dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+												}
 												byte[] chunck = new byte[CHUNKSIZE];
 												long readBytes = 0;
 												while ((n = dis.read(chunck)) != -1)
@@ -440,7 +476,10 @@ public class ServerL2
 											video = new File(path);
 											fos = new FileOutputStream(video + ".mp4");
 											dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-											dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+											if(dos==null)
+											{
+												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
+											}
 											byte[] chunck = new byte[CHUNKSIZE];
 											long readBytes = 0;
 											while ((n = dis.read(chunck)) != -1)

@@ -71,7 +71,7 @@ public class CacheCleaner implements Runnable
 						}
 						finally
 						{
-							entry.getValue().getValue().writeLock().lock();
+							entry.getValue().getValue().writeLock().unlock();
 						}
 						if(!updated)
 						{
