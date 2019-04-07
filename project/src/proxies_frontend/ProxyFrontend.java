@@ -1,10 +1,15 @@
 package proxies_frontend;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.Scanner;
 import java.util.concurrent.locks.ReentrantLock;
+
+
+
 
 public class ProxyFrontend
 {
@@ -49,13 +54,62 @@ public class ProxyFrontend
 			try
 			{
 				clientSock = serverSock.accept();
-				System.out.println("Connection accepted, a new thread is going to be created.");
+				System.out.println("Connection accepted, a new thread is going to served by the proxy!");
+				ConnectionThread ct = new ConnectionThread(clientSock);
+				ct.start();
 			} 
 			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
 			}
 		}
+	}
+	
+	private class ConnectionThread extends Thread
+	{
+		Socket clientSock;
+
+		public ConnectionThread(Socket clientSock)
+		{
+			this.clientSock = clientSock;
+		}
+		
+		public void run()
+		{
+			Scanner scannerClient = null;
+			PrintWriter pwClient = null;
+			
+			CheckerProxy check;
+			
+			try
+			{
+				String request = null;
+				scannerClient = new Scanner(clientSock.getInputStream());
+				pwClient = new PrintWriter(clientSock.getOutputStream());
+
+				while (scannerClient.hasNextLine())
+				{
+					request = scannerClient.nextLine();
+					check = UtilitiesProxyFrontend.parseRequest(request);
+					
+					if(!check.isCorrect())
+					{
+						// Malformed request
+						pwClient.println(check.getId()); // send error code
+						pwClient.flush();
+					}
+					else
+					{
+						;
+					}
+				}
+			}
+			catch(IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
+		}
+		
 	}
 
 }
