@@ -1,0 +1,8 @@
+TODO
+-modifiche al database in modo da supportare la nuova struttra "pingata"
+ con la lista dei server di l2 (ref. Inizio_doc.odt)
+-nuova classe fa le seguenti cose:
+ 1. lista dei server L2 attivi;
+ 2. registrazione di server di l2;
+ 3. ping ogni T per capire se i server di l2 sono ancora vivi ed eventuale rimozione dal db.
+ 
