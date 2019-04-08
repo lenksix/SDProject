@@ -184,8 +184,7 @@ public class ManageDb
 
 						try
 						{
-							DataOutputStream dos = new DataOutputStream(
-									new BufferedOutputStream(cliSock.getOutputStream()));
+							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
 							FileInputStream fileStream = new FileInputStream(new File(resourcePath));
 							int n = 0;
 							byte[] chunck = new byte[CHUNK_SIZE];

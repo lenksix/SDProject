@@ -67,7 +67,7 @@ public class ServerL2
 			// initialize the local cache
 			vidsCache = new HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>>();
 			lockMap = new ReentrantLock();
-			long time_limit = 20000L;
+			long time_limit = 2000L;
 			
 			//cc.run();
 			//System.exit(1);
@@ -106,8 +106,7 @@ public class ServerL2
 			//***** TEST *******
 			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
 			new Thread(cc).start();
-			
-			//TODO: we have to implement the garbage collection
+
 
 		} 
 		catch (IOException ioe)
@@ -260,10 +259,10 @@ public class ServerL2
 								pwClient.println("200 OK");
 								pwClient.flush();
 								// !! TRIAL- don't know if needed 
-								if(dos == null)
-								{
+								//if(dos == null)
+								//{
 									dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-								}
+								//}
 								fileStream = new FileInputStream(new File(videoCachePath));
 								int n = 0;
 								byte[] chunck = new byte[CHUNKSIZE];
@@ -286,6 +285,10 @@ public class ServerL2
 							}	
 							finally
 							{
+								if(VERBOSE >= 50)
+								{
+									System.out.println("Unlocking the readlock on resource");
+								}
 								// unlocking the read on the resource
 								resource.getValue().readLock().unlock();
 							}
@@ -299,13 +302,22 @@ public class ServerL2
 							// First: check if the resource is in database
 							try
 							{
+								
 								lockMap.lock();
+								if(VERBOSE >= 50)
+								{
+									System.out.println("Took the lock on Map - Get in_cache");
+								}
 								if(vidsCache.containsKey(check.getResource()))
 								{
 									boolean updatedResource = false;
 									try 
 									{
 										resource = vidsCache.get(check.getResource());
+										if(VERBOSE >= 50)
+										{
+											System.out.println("Getting the timestamp - Get in_cache" + resource.getKey().getPath() + ">");
+										}
 										// check if the resource is still updated 
 										if ((resource.getKey().getTimeStamp() + cc.getTimeLimit() >= System.currentTimeMillis())) 
 										{
@@ -326,6 +338,10 @@ public class ServerL2
 									}
 									finally
 									{
+										if(VERBOSE >= 50)
+										{
+											System.out.println("Unlock the map - Get in_cache");
+										}
 										lockMap.unlock();
 									}
 									if(updatedResource)
@@ -335,10 +351,10 @@ public class ServerL2
 											//Now that i have the read lock and I know file is readable, I can send the file!
 											pwClient.println("200 OK");
 											pwClient.flush();
-											if(dos==null)
-											{
+											//if(dos==null)
+											//{
 												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-											}
+											//}
 											fileStream = new FileInputStream(new File(videoCachePath));
 											int n1 = 0;
 											byte[] chunck = new byte[CHUNKSIZE];
@@ -392,10 +408,10 @@ public class ServerL2
 												video = new File(path);
 												fos = new FileOutputStream(video + ".mp4");
 												dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-												if(dos == null)
-												{
+												//if(dos == null)
+												//{
 													dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-												}
+												//}
 												byte[] chunck = new byte[CHUNKSIZE];
 												long readBytes = 0;
 												while ((n = dis.read(chunck)) != -1)
@@ -476,10 +492,10 @@ public class ServerL2
 											video = new File(path);
 											fos = new FileOutputStream(video + ".mp4");
 											dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-											if(dos==null)
-											{
+											//if(dos==null)
+											//{
 												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-											}
+											//}
 											byte[] chunck = new byte[CHUNKSIZE];
 											long readBytes = 0;
 											while ((n = dis.read(chunck)) != -1)
