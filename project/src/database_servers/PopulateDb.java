@@ -28,8 +28,8 @@ public class PopulateDb
 		}
 		try
 		{
-			Cluster cluster;
-			Session session;
+			Cluster cluster = null;
+			Session session = null;
 			String currentLine = null;
 			
 			File input = new File("media//populate_db//" + args[0]);
@@ -70,6 +70,10 @@ public class PopulateDb
 				catch (NullPointerException npe)
 				{
 					npe.printStackTrace();
+				}
+				finally 
+				{
+					reader.close();
 				}
 			}
 			else

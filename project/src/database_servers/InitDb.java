@@ -7,11 +7,9 @@
 
 package database_servers;
 
-import java.io.IOException;
-
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.*;
+import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /* creates the table we need for querying the urls */
 class InitDb
@@ -43,13 +41,22 @@ class InitDb
 			session.execute("USE streaming;");
 			// Create the table
 			session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
-					// + "id_channel uuid,"
-					+ "channel_name text," + "vids set<text>, " // where list is a list of url
+					+ "channel_name text," 
+					+ "vids set<text>, " // where list is a list of url
 					+ "PRIMARY KEY(channel_name));");
 
 			// create the table of url-path for each video
-			session.execute("CREATE TABLE IF NOT EXISTS vid_path(" + "url text," + "path text," + "PRIMARY KEY(url));");
-			System.out.println("Table vid_path created!");
+			session.execute("CREATE TABLE IF NOT EXISTS vid_path("
+					+ "url text," 
+					+ "path text," 
+					+ "PRIMARY KEY(url));");
+			
+			session.execute("CREATE TABLE IF NOT EXISTS ip_cache("
+					+ "ip text,"
+					+ "port int,"
+					+ "PRIMARY KEY(ip, port));");
+			
+			// System.out.println("Table vid_path created!");
 			session.close();
 			cluster.close();
 		} 
@@ -57,10 +64,7 @@ class InitDb
 		{
 			System.out.println("Build failed: <" + nhae.getMessage() + ">");
 			nhae.printStackTrace();
-		} 
-		catch (com.datastax.driver.core.exceptions.SyntaxError dse)
-		{
-			dse.printStackTrace();
+			System.exit(1);
 		}
 	}
 }

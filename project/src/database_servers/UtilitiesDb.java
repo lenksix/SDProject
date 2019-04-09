@@ -63,7 +63,7 @@ public class UtilitiesDb
 	 * duplicate values will not be stored distinctly.
 	 * 
 	 * @param ch_name the name of the channel
-	 * @param url     the url of the corresponding video
+	 * @param url the url of the corresponding video
 	 * @return the query string to use to update the channel_vids table
 	 */
 	public static String updateChannelVids(String ch_name, String url)
@@ -74,18 +74,72 @@ public class UtilitiesDb
 	}
 
 	/**
-	 * To insert a new video to the vid_path table. NOTE: duplicate values will be
-	 * overwritten because the IF NOT EXIST parameters return errors (to fix)
+	 * To insert a new video to the vid_path table. 
+	 * NOTE: duplicate values will be overwritten because the IF NOT EXIST parameters return errors (to fix)
 	 * 
 	 * @param url  the url of the video
 	 * @param path the path where the video is stored
 	 * @return the query string to use to insert the new video into the vid_path
-	 *         table
+	 *         table.
 	 */
 	public static String insertUrlPath(String url, String path)
 	{
 		final String q = "INSERT INTO vid_path(url, path) VALUES ('" + url + "', '" + path + "');";
 		// + " IF NOT EXISTS;";
+		return q;
+	}
+	
+	/**
+	 * To insert a new ip-port record in the database ip_cache table.
+	 * For the deletion see @see #deleteIPCache(String, int)
+	 * @param ip the ip of the cache server
+	 * @param port the port of the cache server 
+	 * @return the query string to use to insert the record in the table.
+	 */
+	public static String insertIPCache(String ip, int port)
+	{
+		final String q = "INSERT INTO ip_cache(ip, port) VALUES ('" + ip + "', '" + port + "');";
+		return q;
+	}
+	
+	/**
+	 * To delete a ip-port record in the database ip_cache table. 
+	 * For the insertion see @see #insertIPCache(String, int)
+	 * @param ip the ip of the cache server
+	 * @param port the port of the cache server 
+	 * @return the query string to use to delete the record in the table.
+	 */
+	public static String deleteIPCache(String ip, int port)
+	{
+		final String q = "DELETE FROM ip_cache WHERE ip='" + ip +"' AND port=" + port + ";";
+		return q;
+	}
+	
+	/**
+	 * To select all the record inside the ip_cache table
+	 * @return the query string to select all the record inside the ip_cache table.
+	 */
+	public static String selectFromIPCache()
+	{
+		final String q = selectFromIPCache(null, 0);
+		return q;
+	}
+	
+	/**
+	 * To select a specific record inside the ip_cache table given the ip and the port
+	 * @param ip the ip of the cache server
+	 * @param port the port of the cache server
+	 * @return the query string to use to select a specific record in the table.
+	 */
+	public static String selectFromIPCache(String ip, int port)
+	{
+		String where = "WHERE ip = '" + ip + "' AND port = " + port + ";";
+		if(ip == null) 
+		{
+			where = ";";
+		}
+			
+		final String q = "SELECT * FROM ip_cache" + where;
 		return q;
 	}
 

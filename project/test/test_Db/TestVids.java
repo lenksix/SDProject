@@ -56,16 +56,23 @@ class TestVids
 		{
 			System.out.println(row);
 		}
-
-		/*
-		 * Map<String, String> m = null;
-		 * 
-		 * for(Row row: results) { System.out.println(row); m = row.getMap("vids",
-		 * TypeToken.of(String.class), TypeToken.of(String.class)); //this returns a Map
-		 * for each row in the table //this lambda expression is used, in this case, to
-		 * print all the values m.forEach((key, value) -> { System.out.println(key);
-		 * System.out.println(value); }); }
-		 */
+		
+		/*		
+		Map<String, String> m = null;
+		  
+		for(Row row: results) 
+		{
+			System.out.println(row); 
+			m = row.getMap("vids", TypeToken.of(String.class), TypeToken.of(String.class)); 
+			//this returns a Map for each row in the table //this lambda expression is used, in this case, to
+			// print all the values 
+			m.forEach((key, value) -> { 
+				System.out.println(key);
+				System.out.println(value); 
+			}); 
+		}
+		*/
+		
 		session.close();
 		cluster.close();
 	}
