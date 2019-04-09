@@ -90,7 +90,7 @@ public class UtilitiesDb
 	}
 	
 	/**
-	 * To insert a new ip-port record in the database ip_cache table.
+	 * To insert a new ip-port record in the database ip_cache table if it's not already present.
 	 * For the deletion see @see #deleteIPCache(String, int)
 	 * @param ip the ip of the cache server
 	 * @param port the port of the cache server 
@@ -98,7 +98,8 @@ public class UtilitiesDb
 	 */
 	public static String insertIPCache(String ip, int port)
 	{
-		final String q = "INSERT INTO ip_cache(ip, port) VALUES ('" + ip + "', '" + port + "');";
+		final String q = "INSERT INTO ip_cache(ip, port) VALUES ('"
+			+ ip + "', " + port + ") IF NOT EXISTS;";
 		return q;
 	}
 	
