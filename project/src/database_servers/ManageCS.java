@@ -76,10 +76,13 @@ public class ManageCS
 					// manage the connection
 					// (no thread pooling)
 					cacheServerSock = manageCSSock.accept();
-					System.out.println("Connection accepted from a server cache, a new thread is going to be created.");
-					// TODO: create a thread to manage the connection
-					//ConnectionThread ct = new ConnectionThread(clientSock);
-					//ct.start();
+					String ip_port = cacheServerSock.getInetAddress().getHostAddress() + " " + cacheServerSock.getPort();
+					System.out.println("Connection accepted from a server cache at " + ip_port);
+					System.out.println("A new cache register thread is going to be created.");
+					System.out.println(ip_port);
+					// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
+					CacheRegisterThread crt = new CacheRegisterThread(cacheServerSock, cluster);
+					crt.start();
 				} 
 				catch (IOException ioe)
 				{
