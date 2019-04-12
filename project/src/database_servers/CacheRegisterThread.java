@@ -3,19 +3,17 @@ package database_servers;
 import java.io.IOException;
 import java.net.Socket;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
 public class CacheRegisterThread extends Thread
 {
 	private Socket cacheServerSock = null;
-	private Cluster cluster = null;
 	private Session session = null;
 	
-	public CacheRegisterThread(Socket s, Cluster c)
+	public CacheRegisterThread(Socket cacheServerSock, Session session)
 	{
-		cacheServerSock = s;
-		cluster = c;
+		this.cacheServerSock = cacheServerSock;
+		this.session = session;
 	}
 	
 	@Override
@@ -26,7 +24,6 @@ public class CacheRegisterThread extends Thread
 		String registerQuery = UtilitiesDb.insertIPCache(ip, port);
 		try
 		{
-			session = cluster.connect();
 			synchronized(session)
 			{
 				session.execute("USE streaming;");
@@ -37,7 +34,6 @@ public class CacheRegisterThread extends Thread
 		finally
 		{
 			session.close();
-			cluster.close();
 			try
 			{
 				cacheServerSock.close();

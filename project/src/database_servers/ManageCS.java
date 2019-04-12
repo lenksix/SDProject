@@ -15,27 +15,26 @@ import com.datastax.driver.core.Session;
  * 
  * @author Andrea Bugin and Ilie Sarpe
  */
-public class ManageCS 
+public class ManageCS extends Thread
 {
-	final static int CACHE_SERVER_MANAGER_PORT = 10000;
-	final static String clusterAdd = "127.0.0.1";
-	Cluster cluster = null;
-	Session session = null;
+	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
+	private final static String clusterAdd = "127.0.0.1";
+	private Cluster cluster = null;
+	private Session session = null;
 	
-	public static void main(String[] args)
+	public ManageCS(Session session)
 	{
-		(new ManageCS()).exec(args);
+		this.session = session;
 	}
-
-	void exec(String[] args) 
+	
+	@Override
+	public void run()
 	{
 		ServerSocket manageCSSock = null;
 		Socket cacheServerSock = null;
 		
 		try
 		{
-			cluster = Cluster.builder().addContactPoint(clusterAdd).build();
-			session = cluster.connect();
 			session.execute("USE streaming;");
 			
 			//------------------- for test purpose, just to create some records in the table.
@@ -81,7 +80,7 @@ public class ManageCS
 					System.out.println("A new cache register thread is going to be created.");
 					System.out.println(ip_port);
 					// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
-					CacheRegisterThread crt = new CacheRegisterThread(cacheServerSock, cluster);
+					CacheRegisterThread crt = new CacheRegisterThread(cacheServerSock, session);
 					crt.start();
 				} 
 				catch (IOException ioe)
@@ -103,6 +102,22 @@ public class ManageCS
 		{
 			cluster.close();
 			session.close();
+		}
+	}
+	
+	// THIS CLASS MUST RETRIEVE THE IP-PORT FROM THE DATABASE AND THAN PING EVERY L2 SERVER
+	private class CachePinger extends Thread
+	{
+		private Session session;
+
+		public CachePinger(Session session)
+		{
+			this.session = session;
+		}
+		
+		@Override
+		public void run()
+		{
 		}
 	}
 }

@@ -8,7 +8,7 @@ package database_servers;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class UtilitiesDb
+public abstract class UtilitiesDb
 {
 	final static int NUMARGS = 3;
 	final static ArrayList<String> methods = new ArrayList<String>(Arrays.asList("GET"));

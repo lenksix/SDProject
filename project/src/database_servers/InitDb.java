@@ -12,7 +12,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /* creates the table we need for querying the urls */
-class InitDb
+public class InitDb
 {
 	public static void main(String[] args)
 	{

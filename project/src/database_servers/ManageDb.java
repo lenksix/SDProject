@@ -23,16 +23,16 @@ import com.datastax.driver.core.Session;
 public class ManageDb
 {
 	private static final String os = System.getProperty("os.name").toLowerCase();
-	final static int SOCKETPORT = 8765;
-	final static String errorMsg = "600 GENERIC ERROR";
-	final static int NUMARGS = 3;
-	final static String clusterAdd = "127.0.0.1";
-	final static String notFound = "404 NOT FOUND";
+	private final static int SOCKETPORT = 8765;
+	private final static String errorMsg = "600 GENERIC ERROR";
+	private final static int NUMARGS = 3;
+	private final static String clusterAdd = "127.0.0.1";
+	private final static String notFound = "404 NOT FOUND";
 
-	final static int CHUNK_SIZE = 1000;
+	private final static int CHUNK_SIZE = 1000;
 
-	Cluster cluster = null;
-	Session session = null;
+	private Cluster cluster = null;
+	private Session session = null;
 
 	// Usual main method
 	public static void main(String[] argv)
@@ -54,28 +54,6 @@ public class ManageDb
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
 
-		// run cassandra in background if it is not already running (useful in Windows
-		// for example)
-		try
-		{
-			if (os.contains("linux"))
-			{
-				Runtime.getRuntime().exec("sh cassandra -f");
-			} else if (os.startsWith("win"))
-			{
-				Runtime.getRuntime().exec("cmd /c start cassandra -f");
-			} else
-			{
-				System.out.println("Operating system not supported.");
-				return;
-			}
-		} 
-		catch (IOException ioe)
-		{
-			ioe.printStackTrace();
-			System.exit(1);
-		}
-
 		try
 		{
 			// Instantiate the server socket
@@ -87,7 +65,7 @@ public class ManageDb
 			ioe.printStackTrace();
 		}
 
-		while (true)
+		while(true)
 		{
 			try
 			{
