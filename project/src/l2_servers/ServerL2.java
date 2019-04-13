@@ -1,38 +1,54 @@
 package l2_servers;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.HashMap;
+import java.util.Scanner;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
 import org.apache.commons.io.FilenameUtils;
-import javafx.util.*;
-import java.util.concurrent.locks.*;
+
+import javafx.util.Pair;
 
 
 public class ServerL2
 {
-	private final static int SOCKETPORT = 8860;
+	private static int dbPort = -1;
+	private final static int OK = 200;	
+	private final static int VERBOSE = 100;
+	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
+	private final static int CHUNK_SIZE = 1000; // size of each chunk of the file in bytes
+	
+	private final static String localhost = "localhost";
+	private final static String registrationError = "620 REGISTRATION ERROR";
+	private final static String registrationOK = "210 REGISTRATION DONE";
 	private final static String notFound = "404 NOT FOUND";
 	private final static String hosts = "src//l2_servers//db_host.txt";
 	private final static String notInCache = "701 NOT IN_CACHE";
 	private final static String notUpdated = "702 NOT UPDATED";
-	private final static String CACHE_DEFAULT_PATH = "media//media_cache//";
+	private final static String cache_default_path = "media//media_cache//";
 	private final static String[] formats = {".mp4", ".avi", ".mkv"};
-	private final static int CHUNKSIZE = 1000; // size of each chunk of the file in bytes
-	//private final static int DEF_RECEIVING_VID = 0;
-	private final static int OK = 200;
-	
-	private final static int VERBOSE = 100;
 
-	private static CacheCleaner cc;
+	private static Set<Integer> usedPort = null;
+	private static CacheCleaner cc = null;
 	private static String dbAddress = null;
-	private static int dbPort = -1;
 	private static HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
 	private static ReentrantLock lockMap = null;
-	// private static HashMap<String, String[]> namesCache = null; // map <ID_CH,
-	// Video[]> future implementation
 	
 	public static void main(String[] args)
 	{
@@ -43,43 +59,47 @@ public class ServerL2
 	{
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
-
+		int SOCKET_PORT;
+		usedPort = new CopyOnWriteArraySet<Integer>();
+		
+		// search an unused port and then add it in the usedPort set
+		do
+		{
+			SOCKET_PORT = (int)(1024 + (1 + 49151 - 1024) * Math.random()); // the range of port we can use is [1024; 49151]
+		}
+		while(usedPort.contains(SOCKET_PORT));
+		usedPort.add(SOCKET_PORT);
+		
 		try
 		{
 			// Instantiate the server socket
-			/*
-			 * PROBLEM: We need to add the ip address of this L2 server to a common data
-			 * structure for the L1 servers
-			 */
-			serverSock = new ServerSocket(SOCKETPORT);
-			System.out.println("Ok, Serversocket created!");
+			serverSock = new ServerSocket(SOCKET_PORT);
+			System.out.println("Ok, Server L2 created!");
 
 			// Need the address of the "db manager", assume this file is just for the boot,
 			// then is modified according to some protocol
-			BufferedReader file = new BufferedReader(new FileReader(hosts.trim()));
-			String line = file.readLine();
+			Scanner file = new Scanner(new FileReader(hosts.trim()));
+			String line = file.nextLine();
 			file.close();
 
 			dbAddress = line.split(" ")[0];
 			dbPort = Integer.parseInt(line.split(" ")[1]);
 
 			System.out.println("Ok, file read!" + " <" + dbAddress + "> " + " <" + dbPort + "> ");
+			
 			// initialize the local cache
 			vidsCache = new HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>>();
 			lockMap = new ReentrantLock();
 			long time_limit = 2000L;
 			
-			//cc.run();
-			//System.exit(1);
-			System.out.println("Ci passo");
 			// if the cache goes down we have to restore in vidsCache all the videos
 			// TODO: decide how to restore the videos. For now we put in the vidsCache all the videos with timestamp equal to the moment when they are found.
 			// Open the default folder of the cache
 			File folder = new File("media/media_cache");
 			for(File fileFound : folder.listFiles()) 
 			{
-				if(fileFound.isDirectory()) 
-				{ } 	// TODO: need to decide if we find a directory
+				System.out.println(fileFound);
+				if(fileFound.isDirectory()) {} 	// TODO: need to decide if we find a directory
 				else
 				{
 					for(String format : formats) // for every file check if it is a video (if it ends with one the formats defined above)
@@ -103,11 +123,11 @@ public class ServerL2
 				System.out.println("Timestamp = " + y.getKey().getTimeStamp());
 			});
 			
+			System.exit(1);
+			
 			//***** TEST *******
 			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
 			new Thread(cc).start();
-
-
 		} 
 		catch (IOException ioe)
 		{
@@ -122,27 +142,62 @@ public class ServerL2
 				ioe2.printStackTrace();
 			}
 		}
-
-		while (true)
+		
+		// I have to register this server on the ip_cache table
+		try
 		{
-			try
+			try(Socket registerSocket = new Socket(localhost, CACHE_SERVER_MANAGER_PORT);
+				Scanner registerScanner = new Scanner(registerSocket.getInputStream());
+				ObjectOutputStream registerStream = new ObjectOutputStream(registerSocket.getOutputStream()); ) // try-with-resources
 			{
-				// accept a connection, when a client is connected, a new thread is created to
-				// manage the connection
-				// (no thread pooling) for now
-				clientSock = serverSock.accept();
-				System.out.println("Connection accepted, a new thread is going to be created.");
-				ConnectionThread ct = new ConnectionThread(clientSock);
-				ct.start();
-			} 
-			catch (IOException ioe)
-			{
-				ioe.printStackTrace();
+				registerStream.writeObject(new Pair<>(localhost, SOCKET_PORT));
+				registerStream.flush();
+				String registerResponse = registerScanner.nextLine();
+				
+				if(registerResponse.equalsIgnoreCase(registrationOK)) {}
+				else if(registerResponse.equalsIgnoreCase(registrationError))
+				{
+					throw new UnregisteredServerException();
+				}
+				else
+				{
+					System.out.println("Undefined contol sequence in registration response: quit.");
+					System.exit(1);
+				}
 			}
+		}
+		catch(IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+		
+		try 
+		{
+			while(true)
+			{
+				try
+				{
+					// accept a connection, when a client is connected, a new thread is created to
+					// manage the connection
+					// (no thread pooling) for now
+					clientSock = serverSock.accept();
+					System.out.println("Connection accepted, a new thread is going to be created.");
+					Thread connectionThread = new Thread(new ConnectionThread(clientSock));
+					connectionThread.start();
+				} 
+				catch(IOException ioe)
+				{
+					ioe.printStackTrace();
+				}
+			}
+		}
+		finally 
+		{
+			usedPort.remove(SOCKET_PORT);
 		}
 	}
 
-	private class ConnectionThread extends Thread
+	private class ConnectionThread implements Runnable
 	{
 		Socket clientSock = null;
 		Socket dbSock = null;
@@ -173,13 +228,13 @@ public class ServerL2
 				scannerClient = new Scanner(clientSock.getInputStream());
 				pwClient = new PrintWriter(clientSock.getOutputStream());
 
-				while (scannerClient.hasNextLine())
+				while(scannerClient.hasNextLine())
 				{
 					// Check syntax of the request
 					query = scannerClient.nextLine();
 					check = UtilitiesL2.checkQuery(query);
 
-					if (!check.isCorrect())
+					if(!check.isCorrect())
 					{
 						// Malformed request
 						pwClient.println(check.getResource()); // send error code
@@ -192,7 +247,6 @@ public class ServerL2
 						// request also a list of the videos of a specific channel
 						if (check.getType() == 1)
 						{
-							//Lock lockfileRead = null;
 							// Verify if the cache contains the resource
 							// Brand new Section!!
 							try
@@ -265,7 +319,7 @@ public class ServerL2
 								//}
 								fileStream = new FileInputStream(new File(videoCachePath));
 								int n = 0;
-								byte[] chunck = new byte[CHUNKSIZE];
+								byte[] chunck = new byte[CHUNK_SIZE];
 								long readBytes = 0;
 								while ((n = fileStream.read(chunck)) != -1)
 								{
@@ -302,7 +356,6 @@ public class ServerL2
 							// First: check if the resource is in database
 							try
 							{
-								
 								lockMap.lock();
 								if(VERBOSE >= 50)
 								{
@@ -357,7 +410,7 @@ public class ServerL2
 											//}
 											fileStream = new FileInputStream(new File(videoCachePath));
 											int n1 = 0;
-											byte[] chunck = new byte[CHUNKSIZE];
+											byte[] chunck = new byte[CHUNK_SIZE];
 											long readBytes = 0;
 											while ((n1 = fileStream.read(chunck)) != -1)
 											{
@@ -402,7 +455,7 @@ public class ServerL2
 												pwClient.flush();
 												DataInputStream dis = null;
 												FileOutputStream fos = null;
-												String path = CACHE_DEFAULT_PATH + check.getResource();
+												String path = cache_default_path + check.getResource();
 												
 												/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
 												video = new File(path);
@@ -412,7 +465,7 @@ public class ServerL2
 												//{
 													dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
 												//}
-												byte[] chunck = new byte[CHUNKSIZE];
+												byte[] chunck = new byte[CHUNK_SIZE];
 												long readBytes = 0;
 												while ((n = dis.read(chunck)) != -1)
 												{
@@ -465,7 +518,7 @@ public class ServerL2
 										pwClient.flush();
 										DataInputStream dis = null;
 										FileOutputStream fos = null;
-										String path = CACHE_DEFAULT_PATH + check.getResource() ;
+										String path = cache_default_path + check.getResource() ;
 
 										try 
 										{
@@ -496,7 +549,7 @@ public class ServerL2
 											//{
 												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
 											//}
-											byte[] chunck = new byte[CHUNKSIZE];
+											byte[] chunck = new byte[CHUNK_SIZE];
 											long readBytes = 0;
 											while ((n = dis.read(chunck)) != -1)
 											{
@@ -526,6 +579,7 @@ public class ServerL2
 									else
 									{
 										pwClient.println(notFound); /* Video not in DB */
+										pwClient.flush();
 									}
 									dbSock.close();
 								} 
@@ -542,7 +596,8 @@ public class ServerL2
 				}
 				try
 				{
-					dos.close();
+					if(dos != null)
+						dos.close();
 					clientSock.close();
 				} 
 				catch (IOException ioe2)
@@ -554,6 +609,14 @@ public class ServerL2
 			{
 				ioe.printStackTrace();
 			}
+		}
+	}
+	
+	private class UnregisteredServerException extends RuntimeException
+	{
+		public UnregisteredServerException()
+		{
+			super();
 		}
 	}
 }

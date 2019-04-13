@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
 /**
@@ -18,8 +16,6 @@ import com.datastax.driver.core.Session;
 public class ManageCS extends Thread
 {
 	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
-	private final static String clusterAdd = "127.0.0.1";
-	private Cluster cluster = null;
 	private Session session = null;
 	
 	public ManageCS(Session session)
@@ -32,92 +28,73 @@ public class ManageCS extends Thread
 	{
 		ServerSocket manageCSSock = null;
 		Socket cacheServerSock = null;
+		session.execute("USE streaming;");
+		
+		//------------------- for test purpose, just to create some records in the table.
+		/* 
+		String q = UtilitiesDb.insertIPCache("192.168.1.1", 12345);
+		session.execute(q);
+		
+		q = UtilitiesDb.insertIPCache("192.168.1.1", 12346);
+		session.execute(q);
+		
+		q = UtilitiesDb.selectFromIPCache();
+		ResultSet rSet = session.execute(q);
+		
+		System.out.println(q);
+		//rSet.forEach(System.out::println);
+		
+		//List<ColumnDefinitions.Definition> column = rSet.getColumnDefinitions().asList();
+		//column.forEach(x->System.out.println(x.getName()));
+		
+		rSet.forEach(row -> System.out.println(row.getString("ip") + " " + row.getInt("port")));
+		*/
+		//------------------------------------------------------------------------------------------
 		
 		try
 		{
-			session.execute("USE streaming;");
-			
-			//------------------- for test purpose, just to create some records in the table.
-			String q = UtilitiesDb.insertIPCache("192.168.1.1", 12345);
-			session.execute(q);
-			
-			q = UtilitiesDb.insertIPCache("192.168.1.1", 12346);
-			session.execute(q);
-			
-			q = UtilitiesDb.selectFromIPCache();
-			ResultSet rSet = session.execute(q);
-			
-			System.out.println(q);
-			//rSet.forEach(System.out::println);
-			
-			//List<ColumnDefinitions.Definition> column = rSet.getColumnDefinitions().asList();
-			//column.forEach(x->System.out.println(x.getName()));
-			
-			rSet.forEach(row -> System.out.println(row.getString("ip") + " " + row.getInt("port")));
-			//------------------------------------------------------------------------------------------
-			
+			// Instantiate the server socket
+			manageCSSock = new ServerSocket(CACHE_SERVER_MANAGER_PORT);
+			System.out.println("Ok, cache server manager created!");
+		} 
+		catch (IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+		
+		// starting the cache pinger
+		CachePinger cachePingerThread = new CachePinger(session);
+		cachePingerThread.start();
+		
+		while(!isInterrupted())
+		{
 			try
 			{
-				// Instantiate the server socket
-				manageCSSock = new ServerSocket(CACHE_SERVER_MANAGER_PORT);
-				System.out.println("Ok, cache server manager created!");
+				// accept a connection, when a client is connected, a new thread is created to
+				// manage the connection
+				// (no thread pooling)
+				cacheServerSock = manageCSSock.accept();
+				String ip_port = cacheServerSock.getInetAddress().getHostAddress() + " " + cacheServerSock.getPort();
+				System.out.println("Connection accepted from a server cache at " + ip_port);
+				System.out.println("A new cache register thread is going to be created.");
+				
+				// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
+				Thread cacheRegisterThread = new Thread(new CacheRegisterThread(cacheServerSock, session));
+				cacheRegisterThread.start();
 			} 
 			catch (IOException ioe)
 			{
 				ioe.printStackTrace();
-			}
-			
-			while (true)
-			{
 				try
 				{
-					// accept a connection, when a client is connected, a new thread is created to
-					// manage the connection
-					// (no thread pooling)
-					cacheServerSock = manageCSSock.accept();
-					String ip_port = cacheServerSock.getInetAddress().getHostAddress() + " " + cacheServerSock.getPort();
-					System.out.println("Connection accepted from a server cache at " + ip_port);
-					System.out.println("A new cache register thread is going to be created.");
-					System.out.println(ip_port);
-					// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
-					CacheRegisterThread crt = new CacheRegisterThread(cacheServerSock, session);
-					crt.start();
-				} 
-				catch (IOException ioe)
+					manageCSSock.close();
+				}
+				catch (IOException ioe2)
 				{
-					ioe.printStackTrace();
-					try
-					{
-						manageCSSock.close();
-					}
-					catch (IOException ioe2)
-					{
-						ioe2.printStackTrace();
-					}
+					ioe2.printStackTrace();
 				}
 			}
-			
-		}
-		finally 
-		{
-			cluster.close();
-			session.close();
-		}
+		}	
 	}
 	
-	// THIS CLASS MUST RETRIEVE THE IP-PORT FROM THE DATABASE AND THAN PING EVERY L2 SERVER
-	private class CachePinger extends Thread
-	{
-		private Session session;
-
-		public CachePinger(Session session)
-		{
-			this.session = session;
-		}
-		
-		@Override
-		public void run()
-		{
-		}
-	}
 }

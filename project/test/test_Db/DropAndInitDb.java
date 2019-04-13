@@ -3,6 +3,8 @@ package test_Db;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 
+import database_servers.InitDb;
+
 
 /**
  * THIS CLASS IS JUST FOR TEST!!!! IT DROPS AND INITS A CLEAN DATABASE 
@@ -18,7 +20,7 @@ public class DropAndInitDb
 			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
 			session = cluster.connect();
 			session.execute("drop keyspace streaming;");
-			(new database_servers.InitDb()).main(args);
+			InitDb.main(args);
 		}
 		finally 
 		{
