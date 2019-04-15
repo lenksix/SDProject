@@ -1,3 +1,9 @@
+/**
+ * CachePinger class: it retrieves the list of active cache servers and "pings" them one by one. If a server doesn't at least one of three times
+ * with a given delay of time, the CachePinger removes the pair ip-port from the ip_cache table.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
+
 package database_servers;
 
 import java.io.IOException;
@@ -64,14 +70,21 @@ public class CachePinger extends Thread
 		}
 	}
 	
-	private static boolean isAddressReachable(String address, int port, int timeout) 
+	/**
+	 * Verify if an address specified by the pair ip-port is reachable.
+	 * @param ip the ip to verify the reachability 
+	 * @param port the port to verify the reachability
+	 * @param timeout the timeout value to be used in milliseconds
+	 * @return true if the address is reachable, false otherwise
+	 */
+	private static boolean isAddressReachable(String ip, int port, int timeout) 
 	{
 		try 
 		{
 			try(Socket sock = new Socket()) 
 			{
 				// Connects this socket to the server with a specified timeout value.
-				sock.connect(new InetSocketAddress(address, port), timeout);
+				sock.connect(new InetSocketAddress(ip, port), timeout);
 			}
 			// Return true if connection success
 			return true;

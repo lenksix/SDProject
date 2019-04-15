@@ -1,3 +1,9 @@
+/**
+ * Server Cache class: it manages the requests of the proxies. When there is a proxy request, according to the protocol, 
+ * it retrieve the given video from the database, with a request to the ManageDb, or from the cache if the resource is update.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
+
 package l2_servers;
 
 import java.io.BufferedInputStream;
@@ -9,12 +15,14 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.rmi.UnknownHostException;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -25,24 +33,26 @@ import org.apache.commons.io.FilenameUtils;
 
 import javafx.util.Pair;
 
-
 public class ServerL2
 {
 	private static int dbPort = -1;
-	private final static int OK = 200;	
-	private final static int VERBOSE = 100;
-	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
-	private final static int CHUNK_SIZE = 1000; // size of each chunk of the file in bytes
+	private static final int MIN_PORT = 1024;
+	private static final int MAX_PORT = 49151;
+	private static final int OK = 200;	
+	private static final int VERBOSE = 100;
+	private static final int CACHE_SERVER_MANAGER_PORT = 10000;
+	private static final int CHUNK_SIZE = 1000; // size of each chunk of the file in bytes
 	
-	private final static String localhost = "localhost";
-	private final static String registrationError = "620 REGISTRATION ERROR";
-	private final static String registrationOK = "210 REGISTRATION DONE";
-	private final static String notFound = "404 NOT FOUND";
-	private final static String hosts = "src//l2_servers//db_host.txt";
-	private final static String notInCache = "701 NOT IN_CACHE";
-	private final static String notUpdated = "702 NOT UPDATED";
-	private final static String cache_default_path = "media//media_cache//";
-	private final static String[] formats = {".mp4", ".avi", ".mkv"};
+	private static final String localhost = "localhost";
+	private static final String registerMe = "REGISTER ME";
+	private static final String registrationError = "620 REGISTRATION ERROR";
+	private static final String registrationOK = "210 REGISTRATION DONE";
+	private static final String notFound = "404 NOT FOUND";
+	private static final String hosts = "src//l2_servers//db_host.txt";
+	private static final String notInCache = "701 NOT IN_CACHE";
+	private static final String notUpdated = "702 NOT UPDATED";
+	private static final String cache_default_path = "media//media_cache//";
+	private static final String[] formats = {".mp4", ".avi", ".mkv"};
 
 	private static Set<Integer> usedPort = null;
 	private static CacheCleaner cc = null;
@@ -65,7 +75,8 @@ public class ServerL2
 		// search an unused port and then add it in the usedPort set
 		do
 		{
-			SOCKET_PORT = (int)(1024 + (1 + 49151 - 1024) * Math.random()); // the range of port we can use is [1024; 49151]
+			Random random = new Random();
+			SOCKET_PORT = MIN_PORT + random.nextInt(MAX_PORT - MIN_PORT + 1); // the range of port we can use is [1024; 49151]
 		}
 		while(usedPort.contains(SOCKET_PORT));
 		usedPort.add(SOCKET_PORT);
@@ -123,8 +134,6 @@ public class ServerL2
 				System.out.println("Timestamp = " + y.getKey().getTimeStamp());
 			});
 			
-			System.exit(1);
-			
 			//***** TEST *******
 			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
 			new Thread(cc).start();
@@ -144,31 +153,47 @@ public class ServerL2
 		}
 		
 		// I have to register this server on the ip_cache table
+		Socket registerSocket = null;
+		ObjectInputStream registerScanner = null;
+		ObjectOutputStream registerStream = null;
 		try
 		{
-			try(Socket registerSocket = new Socket(localhost, CACHE_SERVER_MANAGER_PORT);
-				Scanner registerScanner = new Scanner(registerSocket.getInputStream());
-				ObjectOutputStream registerStream = new ObjectOutputStream(registerSocket.getOutputStream()); ) // try-with-resources
+			registerSocket = new Socket(localhost, CACHE_SERVER_MANAGER_PORT);
+			registerStream = new ObjectOutputStream(registerSocket.getOutputStream());
+			registerScanner = new ObjectInputStream(registerSocket.getInputStream());
+			registerStream.writeObject(registerMe);
+			registerStream.flush();
+			registerStream.writeObject(new Pair<>(localhost, SOCKET_PORT));
+			registerStream.flush();
+			
+			String registerResponse = (String) registerScanner.readObject();
+			if(registerResponse.equalsIgnoreCase(registrationOK)) {}
+			else if(registerResponse.equalsIgnoreCase(registrationError))
 			{
-				registerStream.writeObject(new Pair<>(localhost, SOCKET_PORT));
-				registerStream.flush();
-				String registerResponse = registerScanner.nextLine();
-				
-				if(registerResponse.equalsIgnoreCase(registrationOK)) {}
-				else if(registerResponse.equalsIgnoreCase(registrationError))
-				{
-					throw new UnregisteredServerException();
-				}
-				else
-				{
-					System.out.println("Undefined contol sequence in registration response: quit.");
-					System.exit(1);
-				}
+				throw new UnregisteredServerException();
 			}
-		}
-		catch(IOException ioe)
+			else
+			{
+				System.out.println("Undefined contol sequence in registration response: quit.");
+				System.exit(1);
+			}
+		} 
+		catch(ClassNotFoundException | IOException e) 
 		{
-			ioe.printStackTrace();
+			e.printStackTrace();
+		}
+		finally
+		{
+			try
+			{
+				registerSocket.close();
+				registerStream.close();
+				registerScanner.close();
+			} 
+			catch(IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
 		}
 		
 		try 
@@ -612,6 +637,10 @@ public class ServerL2
 		}
 	}
 	
+	/**
+	 * This is an exception thrown when the current server is not able to get register in the ip_cache table.
+	 * @author Andrea Bugin and Ilie Sarpe
+	 */
 	private class UnregisteredServerException extends RuntimeException
 	{
 		public UnregisteredServerException()

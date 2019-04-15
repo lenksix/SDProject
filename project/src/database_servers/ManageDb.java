@@ -14,11 +14,10 @@ import com.datastax.driver.core.Session;
 
 public class ManageDb
 {
-	private static final String os = System.getProperty("os.name").toLowerCase();
-	private final static int SOCKETPORT = 8765;
-	private final static String errorMsg = "600 GENERIC ERROR";
-	private final static int NUMARGS = 3;
-	private final static String clusterAdd = "127.0.0.1";
+	private static final int SOCKETPORT = 8765;
+	private static final int NUMARGS = 3;
+	private static final String errorMsg = "600 GENERIC ERROR";
+	private static final String clusterAdd = "127.0.0.1";
 
 	// Usual main method
 	public static void main(String[] argv)
