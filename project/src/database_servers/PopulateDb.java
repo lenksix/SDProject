@@ -21,18 +21,19 @@ public class PopulateDb
 		// id_i value_i\n for each i=1,...,n (observe that for now only vid_path is supported)
 		
 		
-		if(args.length != 1) 
+		/*if(args.length != 1) 
 		{
 			System.out.println("Not the correct number of parameters, only one is allowed!");
 			System.exit(1);
-		}
+		}*/
+		String filePop = "entry1"; 
 		try
 		{
 			Cluster cluster = null;
 			Session session = null;
 			String currentLine = null;
 			
-			File input = new File("media//populate_db//" + args[0]);
+			File input = new File("media//populate_db//" + filePop);
 			BufferedReader reader = new BufferedReader(new FileReader(input));
 			currentLine = reader.readLine().trim();
 			

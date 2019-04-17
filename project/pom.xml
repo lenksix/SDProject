@@ -3,6 +3,12 @@
   <groupId>trial2</groupId>
   <artifactId>trial2</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+	  <repositories>
+		  <repository>
+		    <id>xuggle repo</id>
+		    <url>https://files.liferay.com/mirrors/xuggle.googlecode.com/svn/trunk/repo/share/java/</url>
+		  </repository>
+		</repositories>
   <dependencies>
   	<dependency>
   		<groupId>com.datastax.cassandra</groupId>
@@ -90,6 +96,23 @@
     	<version>1.7.21</version>
     	<scope>test</scope>
 	</dependency>
+	
+
+	<!-- https://mvnrepository.com/artifact/xuggle/xuggle-xuggler -->
+	<dependency>
+	    <groupId>xuggle</groupId>
+	    <artifactId>xuggle-xuggler</artifactId>
+	    <version>5.4</version>
+	</dependency>
+	<!-- https://mvnrepository.com/artifact/org.primefaces/primefaces -->
+	<dependency>
+	    <groupId>org.primefaces</groupId>
+	    <artifactId>primefaces</artifactId>
+	    <version>6.0</version>
+	</dependency>
+
+
+
 	
 
 	

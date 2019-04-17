@@ -68,13 +68,15 @@ public class ServerL2
 			SOCKET_PORT = (int)(1024 + (1 + 49151 - 1024) * Math.random()); // the range of port we can use is [1024; 49151]
 		}
 		while(usedPort.contains(SOCKET_PORT));
+		
 		usedPort.add(SOCKET_PORT);
 		
 		try
 		{
 			// Instantiate the server socket
+			SOCKET_PORT = 28517; // TODO: remove this is only for test
 			serverSock = new ServerSocket(SOCKET_PORT);
-			System.out.println("Ok, Server L2 created!");
+			System.out.println("Ok, Server L2 created at " + SOCKET_PORT );
 
 			// Need the address of the "db manager", assume this file is just for the boot,
 			// then is modified according to some protocol
@@ -90,7 +92,7 @@ public class ServerL2
 			// initialize the local cache
 			vidsCache = new HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>>();
 			lockMap = new ReentrantLock();
-			long time_limit = 2000L;
+			long time_limit = 20000L;
 			
 			// if the cache goes down we have to restore in vidsCache all the videos
 			// TODO: decide how to restore the videos. For now we put in the vidsCache all the videos with timestamp equal to the moment when they are found.
@@ -123,7 +125,7 @@ public class ServerL2
 				System.out.println("Timestamp = " + y.getKey().getTimeStamp());
 			});
 			
-			System.exit(1);
+			//System.exit(1);
 			
 			//***** TEST *******
 			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
@@ -142,7 +144,7 @@ public class ServerL2
 				ioe2.printStackTrace();
 			}
 		}
-		
+		/*
 		// I have to register this server on the ip_cache table
 		try
 		{
@@ -169,7 +171,7 @@ public class ServerL2
 		catch(IOException ioe)
 		{
 			ioe.printStackTrace();
-		}
+		}*/
 		
 		try 
 		{
@@ -249,9 +251,9 @@ public class ServerL2
 						{
 							// Verify if the cache contains the resource
 							// Brand new Section!!
+							lockMap.lock();
 							try
 							{
-								lockMap.lock();
 								if(!vidsCache.containsKey(check.getResource()))
 								{
 									if(VERBOSE >= 50)
@@ -354,9 +356,9 @@ public class ServerL2
 							// and bring it in the cache -> we need to know the most recent
 
 							// First: check if the resource is in database
+							lockMap.lock();
 							try
 							{
-								lockMap.lock();
 								if(VERBOSE >= 50)
 								{
 									System.out.println("Took the lock on Map - Get in_cache");

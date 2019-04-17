@@ -2,10 +2,16 @@ package proxies_frontend;
 
 public class UtilitiesProxyFrontend
 {
+	/**
+	 * @param request String to be syntax checked
+	 * @return A {@link proxies_frontend.CheckerProxy} with parameters set the properly. 
+	 * In particular type = 1 if the query is: GET VIDEO IDVID
+	 */
 	public static CheckerProxy parseRequest(String request)
 	{
 		// Supported requests are:
 		// GET VIDEO ID_VIDEO
+		// END THE CONNECTION
 		
 		String[] chunks = request.split(" ");
 		if(chunks.length != 3)
@@ -22,7 +28,25 @@ public class UtilitiesProxyFrontend
 				}
 				else
 				{
-					return new CheckerProxy("802 ERROR PARAMETER");
+					return new CheckerProxy("803 ERROR PARAMETER");
+				}
+			}
+			else if(chunks[0].toLowerCase().equals("end"))
+			{
+				if(chunks[1].toLowerCase().equals("the"))
+				{
+					if(chunks[2].toLowerCase().equals("connection"))
+					{
+						return new CheckerProxy(chunks[2], true, 99);
+					}
+					else
+					{
+						return new CheckerProxy("804 ERROR PARAMETER_SPECIFIER");
+					}
+				}
+				else
+				{
+					return new CheckerProxy("803 ERROR PARAMETER");
 				}
 			}
 			else
