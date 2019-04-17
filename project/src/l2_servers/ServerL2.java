@@ -155,7 +155,7 @@ public class ServerL2
 				ioe2.printStackTrace();
 			}
 		}
-		
+		/*
 		// I have to register this server on the ip_cache table
 		Socket registerSocket = null;
 		ObjectInputStream registerScanner = null;
@@ -198,7 +198,7 @@ public class ServerL2
 			{
 				ioe.printStackTrace();
 			}
-		}
+		}*/
 		
 		try 
 		{
