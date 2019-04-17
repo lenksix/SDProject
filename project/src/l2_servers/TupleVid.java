@@ -3,9 +3,7 @@
  * @author Andrea Bugin and Ilie Sarpe
  */
 
-
 package l2_servers;
-
 
 class TupleVid
 {

@@ -1,3 +1,11 @@
+/**
+ * The class ManageCS (Manage cache servers) is used to manage the active server cache, 
+ * adding them in the database as ip-port record and ping periodically to verify how many of them are active,
+ * removing the record whether one of them is not.
+ * 
+ * @author Andrea Bugin and Ilie Sarpe
+ */
+
 package database_servers;
 
 import java.io.IOException;
@@ -6,13 +14,6 @@ import java.net.Socket;
 
 import com.datastax.driver.core.Session;
 
-/**
- * The class ManageCS (Manage cache servers) is used to manage the active server cache, 
- * adding them in the database as ip-port record and ping periodically to verify how many of them are active,
- * removing the record whether one of them is not.
- * 
- * @author Andrea Bugin and Ilie Sarpe
- */
 public class ManageCS extends Thread
 {
 	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
@@ -79,22 +80,22 @@ public class ManageCS extends Thread
 				System.out.println("A new cache register thread is going to be created.");
 				
 				// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
-				Thread cacheRegisterThread = new Thread(new CacheRegisterThread(cacheServerSock, session));
+				Thread cacheRegisterThread = new Thread(new CacheServicesThread(cacheServerSock, session));
 				cacheRegisterThread.start();
 			} 
-			catch (IOException ioe)
+			catch(IOException ioe)
 			{
 				ioe.printStackTrace();
 				try
 				{
 					manageCSSock.close();
 				}
-				catch (IOException ioe2)
+				catch(IOException ioe2)
 				{
 					ioe2.printStackTrace();
 				}
+				interrupt();
 			}
 		}	
 	}
-	
 }
