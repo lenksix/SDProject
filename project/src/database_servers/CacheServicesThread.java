@@ -83,6 +83,7 @@ public class CacheServicesThread implements Runnable
 			{
 				oisRequest.close();
 				oosResponse.close();
+				cacheServerSock.close();
 			} 
 			catch(IOException ioe)
 			{
