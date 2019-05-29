@@ -8,9 +8,16 @@ package database_servers;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
+
+import rmi_example.Addition;
+import rmi_servers.SessionManager;
 
 public class ManageDb
 {
@@ -18,6 +25,8 @@ public class ManageDb
 	private static final int NUMARGS = 3;
 	private static final String errorMsg = "600 GENERIC ERROR";
 	private static final String clusterAdd = "127.0.0.1";
+	private static final int RMI_PORT = 11099; // suppose this class can get this port!
+	private static final String RMI_NAME = "SessionManager"; // suppose this class can get this name with some protocol!
 
 	// Usual main method
 	public static void main(String[] argv)
@@ -38,58 +47,67 @@ public class ManageDb
 	{
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
-		
-		Cluster cluster = Cluster.builder().addContactPoint(clusterAdd).build();
-		Session session = cluster.connect();
-
+		// TODO: Spostare su RMI l'inizializzazione
+		/*Cluster cluster = Cluster.builder().addContactPoint(clusterAdd).build();
+		Session session = cluster.connect();*/
 		try
 		{
-			// Instantiate the server socket
-			serverSock = new ServerSocket(SOCKETPORT);
-			System.out.println("Ok, Serversocket created!");
-		} 
-		catch (IOException ioe)
-		{
-			ioe.printStackTrace();
-		}
-		
-		ManageCS mcs = new ManageCS(session);
-		mcs.start();
-		
-		try 
-		{
-			while(true)
+			Registry registry = LocateRegistry.getRegistry(11099);
+			SessionManager server = (SessionManager) registry.lookup(RMI_NAME);
+	
+			try
 			{
-				try
+				// Instantiate the server socket
+				serverSock = new ServerSocket(SOCKETPORT);
+				System.out.println("Ok, Serversocket created!");
+			} 
+			catch (IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
+			// TODO: Spostare su RMI
+			ManageCS mcs = new ManageCS(RMI_PORT, RMI_NAME);
+			mcs.start();
+			
+			try 
+			{
+				while(true)
 				{
-					// accept a connection, when a client is connected, a new thread is created to
-					// manage the connection
-					// (no thread pooling)
-					clientSock = serverSock.accept();
-					System.out.println("Connection accepted, a new thread is going to be created.");
-					Thread connectionThread = new Thread(new ConnectionDbThread(clientSock, session));
-					connectionThread.start();
-				} 
-				catch (IOException ioe)
-				{
-					ioe.printStackTrace();
 					try
 					{
-						serverSock.close();
+						// accept a connection, when a client is connected, a new thread is created to
+						// manage the connection
+						// (no thread pooling)
+						clientSock = serverSock.accept();
+						System.out.println("Connection accepted, a new thread is going to be created.");
+						Thread connectionThread = new Thread(new ConnectionDbThread(clientSock, RMI_PORT, RMI_NAME));
+						connectionThread.start();
 					} 
-					catch (IOException ioe2)
+					catch (IOException ioe)
 					{
-						System.out.println("Failed to close serverSocket Database!");
-						ioe2.printStackTrace();
+						ioe.printStackTrace();
+						try
+						{
+							serverSock.close();
+						} 
+						catch (IOException ioe2)
+						{
+							System.out.println("Failed to close serverSocket Database!");
+							ioe2.printStackTrace();
+						}
 					}
 				}
 			}
+			finally 
+			{
+				mcs.interrupt();
+				/*session.close();
+				cluster.close();*/
+			}
 		}
-		finally 
+		catch(RemoteException | NotBoundException re)
 		{
-			mcs.interrupt();
-			session.close();
-			cluster.close();
+			re.printStackTrace();
 		}
 	}	
 }

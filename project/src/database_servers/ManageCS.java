@@ -17,11 +17,19 @@ import com.datastax.driver.core.Session;
 public class ManageCS extends Thread
 {
 	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
-	private Session session = null;
+	//private Session session = null;
+	private int rmi_port;
+	private String rmi_name;
 	
-	public ManageCS(Session session)
+	// TODO: modificare il costruttore
+	/*public ManageCS(Session session)
 	{
 		this.session = session;
+	}*/
+	public ManageCS(int rmi_port, String rmi_name)
+	{
+		this.rmi_port = rmi_port;
+		this.rmi_name = rmi_name;
 	}
 	
 	@Override
@@ -29,7 +37,8 @@ public class ManageCS extends Thread
 	{
 		ServerSocket manageCSSock = null;
 		Socket cacheServerSock = null;
-		session.execute("USE streaming;");
+		// TODO: Spostare su RMI
+		//session.execute("USE streaming;");
 		
 		//------------------- for test purpose, just to create some records in the table.
 		/* 
@@ -64,7 +73,8 @@ public class ManageCS extends Thread
 		}
 		
 		// starting the cache pinger
-		CachePinger cachePingerThread = new CachePinger(session);
+		// TODO: dofificare il costruttore che non avrà più bisogno della session
+		CachePinger cachePingerThread = new CachePinger(rmi_port, rmi_name);
 		cachePingerThread.start();
 		
 		while(!isInterrupted())
@@ -80,7 +90,8 @@ public class ManageCS extends Thread
 				System.out.println("A new cache register thread is going to be created.");
 				
 				// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
-				Thread cacheRegisterThread = new Thread(new CacheServicesThread(cacheServerSock, session));
+				// TODO: Spostare su RMI
+				Thread cacheRegisterThread = new Thread(new CacheServicesThread(cacheServerSock, rmi_port, rmi_name));
 				cacheRegisterThread.start();
 			} 
 			catch(IOException ioe)

@@ -11,28 +11,40 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 
 import javafx.util.Pair;
+import rmi_servers.SessionManager;
 
 public class CacheServicesThread implements Runnable
 {
 	private Socket cacheServerSock = null;
-	private Session session = null;
+	//private Session session = null;
 	private static final String registerMe = "REGISTER ME";
 	private static final String registrationOK = "210 REGISTRATION DONE";
 	private static final String registrationError = "620 REGISTRATION ERROR";
 	private static final String listServer = "LIST SERVER";
 	private static final String unknownRequest = "UNKNOWN REQUEST";
+	private int rmi_port;
+	private String rmi_name;
 	
-	public CacheServicesThread(Socket cacheServerSock, Session session)
+	public CacheServicesThread(Socket cacheServerSock, int rmi_port, String rmi_name)
 	{
 		this.cacheServerSock = cacheServerSock;
-		this.session = session;
+		// TODO: modify constructor RMI
+		this.rmi_port = rmi_port;
+		this.rmi_name = rmi_name;
 	}
 	
 	@Override
@@ -98,20 +110,31 @@ public class CacheServicesThread implements Runnable
 		Pair<String, Integer> registerPair = null;
 		try 
 		{
+			Registry registry = LocateRegistry.getRegistry(rmi_port);
+			SessionManager server = (SessionManager) registry.lookup(rmi_name);
 			registerPair = (Pair<String, Integer>) oisRequest.readObject();
 			String ip = registerPair.getKey();
 			int port = registerPair.getValue();
 			
 			String registerQuery = UtilitiesDb.insertIPCache(ip, port);
-			session.execute("USE streaming;");
-			session.execute(registerQuery);
+			// TODO: Spostare su RMI la registrazioe, serve un metodo!
+			/*session.execute("USE streaming;");
+			session.execute(registerQuery);*/
+			int result = server.registerQuery(registerQuery);
 			
-			oosResponse.writeObject(registrationOK);
-			oosResponse.flush();
-				
-			System.out.println("Server cache at " + ip + " " + port + " registered");
+			if(result == 0)
+			{
+				oosResponse.writeObject(registrationOK);
+				oosResponse.flush();
+					
+				System.out.println("Server cache at " + ip + " " + port + " registered");
+			}
+			else
+			{
+				System.err.println("Something wrong during the registration");
+			}
 		} 
-		catch(ClassNotFoundException | IOException e) 
+		catch(ClassNotFoundException | IOException | NotBoundException e) 
 		{
 			try 
 			{
@@ -133,26 +156,47 @@ public class CacheServicesThread implements Runnable
 	private void listServer(ObjectOutputStream oosResponse) 
 	{
 		List<Pair<String, Integer>> listActiveServer = new ArrayList<>();
-		
-		String listServerQuery = UtilitiesDb.selectFromIPCache();
-		ResultSet rSet = session.execute(listServerQuery);
-		
-		rSet.forEach(row -> {
-			String ip = row.getString("ip");
-			int port = row.getInt("port");
-			listActiveServer.add(new Pair<>(ip, port));
-		});
-		
 		try
 		{
-			oosResponse.writeObject(listServer);
-			oosResponse.flush();
-			oosResponse.writeObject(listActiveServer);
-			oosResponse.flush();
-		} 
-		catch(IOException ioe)
+			Registry registry = LocateRegistry.getRegistry(rmi_port);
+			SessionManager server = (SessionManager) registry.lookup(rmi_name);
+			
+			String listServerQuery = UtilitiesDb.selectFromIPCache();
+			//TODO: Spostare su RMI sta roba!!
+			//ResultSet rSet = session.execute(listServerQuery);
+			String json = server.searchQuery(listServerQuery);
+			
+			JSONArray array = new JSONArray(json); 
+
+			for(int j = 0; j < array.length(); j++)
+			{
+				JSONObject jsonObj = array.getJSONObject(j);
+				String ip = jsonObj.getString("ip");
+				int port = jsonObj.getInt("port");
+				listActiveServer.add(new Pair<>(ip, port));
+			}
+			
+			/*rSet.forEach(row -> {
+				String ip = row.getString("ip");
+				int port = row.getInt("port");
+				listActiveServer.add(new Pair<>(ip, port));
+			});*/
+			
+			try
+			{
+				oosResponse.writeObject(listServer);
+				oosResponse.flush();
+				oosResponse.writeObject(listActiveServer);
+				oosResponse.flush();
+			} 
+			catch(IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
+		}
+		catch(RemoteException | NotBoundException re)
 		{
-			ioe.printStackTrace();
+			re.printStackTrace();
 		}
 		
 	}

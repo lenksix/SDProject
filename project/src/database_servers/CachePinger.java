@@ -9,10 +9,19 @@ package database_servers;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
+
+import rmi_servers.SessionManager;
 
 public class CachePinger extends Thread
 {
@@ -20,11 +29,14 @@ public class CachePinger extends Thread
 	private static final int REPETITIONS = 3;
 	private static final long SLEEP_TIME = 10000L;
 	private static final long RELOAD_TIME = 100L;
-	private Session session;
+	//private Session session;
+	private int rmi_port;
+	private String rmi_name;
 	
-	public CachePinger(Session session)
+	public CachePinger(int rmi_port, String rmi_name)
 	{
-		this.session = session;
+		this.rmi_port = rmi_port;
+		this.rmi_name = rmi_name;
 	}
 	
 	@Override
@@ -32,15 +44,21 @@ public class CachePinger extends Thread
 	{
 		try 
 		{
+			Registry registry = LocateRegistry.getRegistry(rmi_port);
+			SessionManager server = (SessionManager) registry.lookup(rmi_name);
+			
 			while(!isInterrupted())
 			{
-				ResultSet rSet = session.execute(UtilitiesDb.selectFromIPCache());
+				String json = server.searchQuery(UtilitiesDb.selectFromIPCache());
 				
-				for(Row row : rSet)
+				JSONArray array = new JSONArray(json); 
+
+				for(int j = 0; j < array.length(); j++)
 				{
 					int rep = 0;
-					String ip = row.getString("ip");
-					int port = row.getInt("port");
+					JSONObject jsonObj = array.getJSONObject(j);
+					String ip = jsonObj.getString("ip");
+					int port = jsonObj.getInt("port");
 					
 					for(int i = 0; i < REPETITIONS; i++)
 					{
@@ -57,14 +75,21 @@ public class CachePinger extends Thread
 					}
 					if(rep >= REPETITIONS)
 					{
-						session.execute(UtilitiesDb.deleteIPCache(ip, port));
-						System.out.println("Server " + ip + " " + port + " did not respond " + rep + " times; deletion in the table done");
+						int error = server.deleteQuery(UtilitiesDb.deleteIPCache(ip, port));
+						if(error == 0)
+						{
+							System.out.println("Server " + ip + " " + port + " did not respond " + rep + " times; deletion in the table done");
+						}
+						else
+						{
+							System.err.println("Something went wrong.. not deleted");
+						}
 					}
 				}
 				sleep(SLEEP_TIME);
 			}
 		}
-		catch(InterruptedException ie)
+		catch(InterruptedException | RemoteException | NotBoundException ie )
 		{
 			ie.printStackTrace();
 		}
