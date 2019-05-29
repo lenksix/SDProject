@@ -49,17 +49,16 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 
 			// Trial for decoding
 			
-			
-			JSONArray array = new JSONArray(json); 
+			JSONArray array = new JSONArray(json);
 			System.out.println("Size is " + array.length());
-			for(int i=0; i<array.length(); i++){
-			    JSONObject jsonObj = array.getJSONObject(i);
-			    System.out.println(jsonObj.toString());
-			    System.out.println(jsonObj.getString("ip"));
-			    System.out.println(jsonObj.getInt("port"));
+			for (int i = 0; i < array.length(); i++)
+			{
+				JSONObject jsonObj = array.getJSONObject(i);
+				System.out.println(jsonObj.toString());
+				System.out.println(jsonObj.getString("ip"));
+				System.out.println(jsonObj.getInt("port"));
 			}
 			return json;
-			
 
 		} catch (JsonProcessingException e)
 		{
