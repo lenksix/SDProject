@@ -39,7 +39,7 @@ public class ServerL2
 	private static final int MIN_PORT = 1024;
 	private static final int MAX_PORT = 49151;
 	private static final int OK = 200;	
-	private static final int VERBOSE = 20;
+	private static final int VERBOSE = 100;
 	private static final int CACHE_SERVER_MANAGER_PORT = 10000;
 	private static final int CHUNK_SIZE = 1000; // size of each chunk of the file in bytes
 	
@@ -59,6 +59,8 @@ public class ServerL2
 	private static String dbAddress = null;
 	private static HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>> vidsCache = null; // map <ID_VID, TUPLE_VID> = <ID_VID, <PATH, TIME_STAMP>>
 	private static ReentrantLock lockMap = null;
+	
+	private static int STREAM_PORT = 23456; // Default streaming port for http responses (VIDS)
 	
 	public static void main(String[] args)
 	{
@@ -158,7 +160,8 @@ public class ServerL2
 		}
 		
 		// I have to register this server on the ip_cache table
-		/*Socket registerSocket = null;
+		/*
+		Socket registerSocket = null;
 		ObjectInputStream registerScanner = null;
 		ObjectOutputStream registerStream = null;
 		try
@@ -279,11 +282,13 @@ public class ServerL2
 						{
 							// Verify if the cache contains the resource
 							// Brand new Section!!
+							System.err.println("Ci passo 1");
 							lockMap.lock();
 							try
 							{
 								if(!vidsCache.containsKey(check.getResource()))
 								{
+									System.err.println("Ci passo 2");
 									if(VERBOSE >= 50)
 									{
 										System.out.println("The resource: <" + check.getResource() + "> is not in cache");
@@ -343,31 +348,22 @@ public class ServerL2
 								//Now that i have the read lock and I know file is readable, I can send the file!
 								pwClient.println("200 OK");
 								pwClient.flush();
-								// !! TRIAL- don't know if needed 
-								//if(dos == null)
-								//{
-									dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-								//}
-								fileStream = new FileInputStream(new File(videoCachePath));
-								int n = 0;
-								byte[] chunck = new byte[CHUNK_SIZE];
-								long readBytes = 0;
-								while ((n = fileStream.read(chunck)) != -1)
+								System.err.println("Ci passo 3");
+								
+								String url = createUrl(STREAM_PORT, videoCachePath);
+								pwClient.println("STREAMING AT " + url);
+								pwClient.flush();
+								
+								System.err.println("Prima dello stream");
+								sendVideo(videoCachePath);
+								System.err.println("Dopo lo stream");
+								// stream the video
+								/*if(!sendVideo(videoCachePath))
 								{
-									dos.write(chunck, 0, n);
-									dos.flush();
-									readBytes += n;
-								}
-								System.out.println("Bytes read from cache = " + readBytes);
-								fileStream.close();
-										
+									System.err.println("Error in sending the video from cache updated");
+								}*/		
 										
 							}
-							catch(IOException ioe)
-							{
-								System.err.println("For some reason file was not found");
-								ioe.printStackTrace();
-							}	
 							finally
 							{
 								if(VERBOSE >= 50)
@@ -376,15 +372,14 @@ public class ServerL2
 								}
 								// unlocking the read on the resource
 								resource.getValue().readLock().unlock();
-							}
-							
+							}	
 						}
 						else
 						{
 							// Retrieve the resource and send it to the L1 server
 							// and bring it in the cache -> we need to know the most recent
 
-							// First: check if the resource is in database
+							// First: check if the resource is in cache
 							lockMap.lock();
 							try
 							{
@@ -392,6 +387,7 @@ public class ServerL2
 								{
 									System.out.println("Took the lock on Map - Get in_cache");
 								}
+								// I was asked to retrieve the resource in database but i ave it in cache
 								if(vidsCache.containsKey(check.getResource()))
 								{
 									boolean updatedResource = false;
@@ -435,27 +431,17 @@ public class ServerL2
 											//Now that i have the read lock and I know file is readable, I can send the file!
 											pwClient.println("200 OK");
 											pwClient.flush();
-											//if(dos==null)
-											//{
-												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-											//}
-											fileStream = new FileInputStream(new File(videoCachePath));
-											int n1 = 0;
-											byte[] chunck = new byte[CHUNK_SIZE];
-											long readBytes = 0;
-											while ((n1 = fileStream.read(chunck)) != -1)
+											System.err.println("Ci passo 4");
+											
+											String url = createUrl(STREAM_PORT, videoCachePath);
+											pwClient.println("STREAMING AT " + url);
+											pwClient.flush();
+											
+											// stream the video
+											if(!sendVideo(videoCachePath))
 											{
-												dos.write(chunck, 0, n1);
-												dos.flush();
-												readBytes += n1;
+												System.err.println("Error in sending the video from cache when asked in database");
 											}
-											System.out.println("Bytes read from cache = " + readBytes);
-											fileStream.close();
-										}	
-										catch(IOException ioe)
-										{
-											System.err.println("For some reason file was not found");
-											ioe.printStackTrace();
 										}	
 										finally
 										{
@@ -488,30 +474,27 @@ public class ServerL2
 												FileOutputStream fos = null;
 												String path = cache_default_path + check.getResource();
 												
-												/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
-												video = new File(path);
-												fos = new FileOutputStream(video + ".mp4");
-												dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-												//if(dos == null)
-												//{
-													dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-												//}
-												byte[] chunck = new byte[CHUNK_SIZE];
-												long readBytes = 0;
-												while ((n = dis.read(chunck)) != -1)
-												{
-													fos.write(chunck, 0, n);
-													fos.flush();
-													dos.write(chunck, 0, n);
-													dos.flush();
-													readBytes += n;
-												}
-													
+												long readBytes = receiveVideofromDB(video, fos, dis, dbSock, path);
+												
 												System.out.println("Bytes read from database = " + readBytes);
-												fos.close();	
+												
+												// Now that the video is in cache I can send it
+												pwClient.println("200 OK");
+												pwClient.flush();
+												
+												String url = createUrl(STREAM_PORT, videoCachePath);
+												pwClient.println("STREAMING AT " + url);
+												pwClient.flush();
+												
+												// stream the video
+												if(!sendVideo(videoCachePath))
+												{
+													System.err.println("Error in sending the video from brand new cache");
+												}
 											}
 											else
 											{
+												pwClient.println(notFound);
 												System.err.println("Resource was not updated in cache and disappeared from the database!!");
 											}
 										}
@@ -569,42 +552,32 @@ public class ServerL2
 											//release the lock on the cache
 											lockMap.unlock();
 										}
-										/* LEGGI VIDEO, SALVARLO IN CACHE E MANDARLO A L1 - NON COMPLETO!! */
 										
 										try
 										{
-											video = new File(path);
-											fos = new FileOutputStream(video + ".mp4");
-											dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
-											//if(dos==null)
-											//{
-												dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-											//}
-											byte[] chunck = new byte[CHUNK_SIZE];
-											long readBytes = 0;
-											while ((n = dis.read(chunck)) != -1)
+											long readBytes = receiveVideofromDB(video, fos, dis, dbSock, path);
+				
+											System.out.println("Bytes read from database = " + readBytes);
+											
+											// Now that the video is in cache I can send it
+											pwClient.println("200 OK");
+											pwClient.flush();
+											
+											String url = createUrl(STREAM_PORT, videoCachePath);
+											pwClient.println("STREAMING AT " + url);
+											pwClient.flush();
+											
+											// stream the video
+											if(!sendVideo(videoCachePath))
 											{
-												fos.write(chunck, 0, n);
-												fos.flush();
-												dos.write(chunck, 0, n);
-												dos.flush();
-												readBytes += n;
+												System.err.println("Error in sending the video from brand new cache");
 											}
 											
-											System.out.println("Bytes read from database = " + readBytes);
-											fos.close();
-											
-										}
-										catch (IOException ioe)
-										{
-											ioe.printStackTrace();
 										}
 										finally
 										{
 											rwlRes.writeLock().unlock();
 										}
-										// Video know is in cache we have to set the right timestamp
-										//vidsCache.get(check.getResource()).getKey().setTimeStamp(System.currentTimeMillis());
 										
 									} 
 									else
@@ -642,6 +615,64 @@ public class ServerL2
 				ioe.printStackTrace();
 			}
 		}
+	}
+	
+	private String createUrl(int port,  String path)
+	{
+		String[] chunks = path.split("/");
+		String id = chunks[chunks.length - 1]; // ID of the video
+		return "http://localhost:" + STREAM_PORT + "/" + id;
+	}
+	
+	private boolean sendVideo(String videoPath)
+	{
+		Process pr;
+		try
+		{
+			String[] chunks = videoPath.split("/");
+			String id = chunks[chunks.length - 1]; // ID of the video
+			Runtime rt = Runtime.getRuntime();
+			
+			String command = "cvlc -vvv " + videoPath + " --sout '#transcode{vcodec=h264,acodec=mp3,samplerate44100}:std{access=http,mux=ffmpeg{mux=flv},dst=localhost:"
+					+ STREAM_PORT + "/" + id +"}'";
+			System.err.println("Creating the stream\n" + command);
+			pr = rt.exec(new String[]{"bash","-c",command});
+		}
+		catch(IOException ioe)
+		{
+			ioe.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+	
+	// return the size of the bytes read
+	private long receiveVideofromDB(File video, FileOutputStream fos, DataInputStream dis, Socket dbSock, String path)
+	{
+		
+		long readBytes = 0;
+		try
+		{
+			video = new File(path);
+			fos = new FileOutputStream(video + ".mp4");
+			dis = new DataInputStream(new BufferedInputStream(dbSock.getInputStream()));
+
+			byte[] chunck = new byte[CHUNK_SIZE];
+			
+			int n;
+			while ((n = dis.read(chunck)) != -1)
+			{
+				fos.write(chunck, 0, n);
+				fos.flush();
+				readBytes += n;
+			}
+			fos.close();
+		}
+		catch (IOException ioe)
+		{
+			ioe.printStackTrace();
+		}
+		return readBytes;
 	}
 	
 	/**
