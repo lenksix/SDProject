@@ -39,7 +39,7 @@ public class ServerL2
 	private static final int MIN_PORT = 1024;
 	private static final int MAX_PORT = 49151;
 	private static final int OK = 200;	
-	private static final int VERBOSE = 100;
+	private static final int VERBOSE = 20;
 	private static final int CACHE_SERVER_MANAGER_PORT = 10000;
 	private static final int CHUNK_SIZE = 1000; // size of each chunk of the file in bytes
 	
@@ -103,7 +103,7 @@ public class ServerL2
 			// initialize the local cache
 			vidsCache = new HashMap<String, Pair<TupleVid, ReentrantReadWriteLock>>();
 			lockMap = new ReentrantLock();
-			long time_limit = 20000L;
+			long time_limit = 2000000L;
 			
 			// if the cache goes down we have to restore in vidsCache all the videos
 			// TODO: decide how to restore the videos. For now we put in the vidsCache all the videos with timestamp equal to the moment when they are found.
@@ -131,6 +131,7 @@ public class ServerL2
 			vidsCache.forEach((x,y)->
 			{
 				// Accessing the TupleViod in the pair <TupleVid, rwl>
+				System.out.println("Key is " + x);
 				System.out.println("Filename = " + FilenameUtils.removeExtension(x));
 				System.out.println("Path = " + y.getKey().getPath());
 				System.out.println("Timestamp = " + y.getKey().getTimeStamp());
@@ -139,8 +140,8 @@ public class ServerL2
 			//System.exit(1);
 			
 			//***** TEST *******
-			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
-			new Thread(cc).start();
+			//cc = new CacheCleaner(vidsCache, lockMap, time_limit);
+			//new Thread(cc).start();
 		} 
 		catch (IOException ioe)
 		{
@@ -157,7 +158,7 @@ public class ServerL2
 		}
 		
 		// I have to register this server on the ip_cache table
-		Socket registerSocket = null;
+		/*Socket registerSocket = null;
 		ObjectInputStream registerScanner = null;
 		ObjectOutputStream registerStream = null;
 		try
@@ -198,7 +199,7 @@ public class ServerL2
 			{
 				ioe.printStackTrace();
 			}
-		}
+		}*/
 		
 		try 
 		{
@@ -300,7 +301,8 @@ public class ServerL2
 								}
 								// check if the resource is still updated 
 								// TODO: improve the way cc is accessed
-								if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
+								//if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
+								if(!true)
 								{
 									if(VERBOSE >= 50)
 									{

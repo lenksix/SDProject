@@ -1,5 +1,7 @@
 package proxies_frontend;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -8,7 +10,9 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -23,32 +27,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.primefaces.model.DefaultStreamedContent;
-import org.primefaces.model.StreamedContent;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
-import com.xuggle.mediatool.IMediaReader;
-import com.xuggle.mediatool.IMediaViewer;
-import com.xuggle.mediatool.IMediaWriter;
-import com.xuggle.mediatool.ToolFactory;
-import com.xuggle.xuggler.Global;
-import com.xuggle.xuggler.IContainer;
-import com.xuggle.xuggler.IContainerFormat;
-import com.xuggle.xuggler.IPacket;
-import com.xuggle.xuggler.IStream;
-import com.xuggle.xuggler.IStreamCoder;
-import com.xuggle.xuggler.IVideoPicture;
-import com.xuggle.xuggler.IVideoResampler;
-import com.xuggle.xuggler.demos.VideoImage;
-import com.xuggle.xuggler.io.DataInputOutputHandler;
-import com.xuggle.xuggler.io.XugglerIO;
 
+
+//import clients.VlcjTrial.StreamMedia;
 import javafx.util.Pair;
+import uk.co.caprica.vlcj.media.callback.DefaultCallbackMedia;
+import uk.co.caprica.vlcj.media.callback.nonseekable.NonSeekableInputStreamMedia;
+import uk.co.caprica.vlcj.player.component.EmbeddedMediaPlayerComponent;
 
 
 
 
 public class ProxyFrontend implements Runnable
 {
+	JFrame frame = null;
+
+	EmbeddedMediaPlayerComponent mediaPlayerComponent = null;
+	
 	final static int DEFAULT_PORT = 9856;
 	final static int WAIT_TIME = 15000;
 	private final static int C_SIZE = 1000; // size of each chunk of the file in bytes
@@ -82,9 +80,9 @@ public class ProxyFrontend implements Runnable
 
 			//TODO: need a distributed structure of l2 servers!!
 			
-			manager = new ManageCacheList(l2Map, mapLock);
-			new Thread(manager).start();
-			//l2Map.put("localhost", 28517); // just for test
+			//manager = new ManageCacheList(l2Map, mapLock);
+			//new Thread(manager).start();
+			l2Map.put("localhost", 28517); // just for test
 			
 			//TODO: need to instantiate a class that updates the map.. pings etc..
 			
@@ -245,14 +243,96 @@ public class ProxyFrontend implements Runnable
 									pwCache.flush();
 									
 									cacheResponse = scannerCache.nextLine(); // Assume it is alive
-									System.out.println("Prima del parsing..");
+									//System.out.println("Prima del parsing..");
 									if(cacheResponse.trim().toLowerCase().equals("200 ok"))
 									{
 										// I have found the resource!!
+										System.out.println("Server has the resource in cache!");
 										pwClient.println("200 OK");
 										pwClient.flush();
 										
-										dis = new DataInputStream(new BufferedInputStream(cacheConn.getInputStream()));
+										BufferedInputStream bis = new BufferedInputStream(cacheConn.getInputStream());
+										StreamMedia test = new StreamMedia(bis);
+										
+										
+										//try {wait(1000);} catch (InterruptedException ie) {ie.printStackTrace();}
+										Runnable torun = new Runnable() 
+									      {
+										      public void run() 
+										      {
+										    	  
+										        /*JFrame frame = new JFrame("A GUI");
+										        frame.setBounds(100, 100, 600, 400);
+										        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+									
+										        EmbeddedMediaPlayerComponent mediaPlayer = new EmbeddedMediaPlayerComponent();
+										        frame.setContentPane(mediaPlayer);
+									
+										        frame.setVisible(true);
+									
+										        //play the StreamMedia object I've created
+										        if(mediaPlayer.mediaPlayer().media().start(test))
+										        {
+										        	mediaPlayer.mediaPlayer().media().play(test);
+										        }
+										        else
+										        {
+										        	System.out.println("Errore media non parte");
+										        }*/
+										    	  frame = new JFrame("My First Media Player");
+										          frame.setBounds(100, 100, 600, 400);
+										          frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+										          frame.addWindowListener(new WindowAdapter() {
+										              @Override
+										              public void windowClosing(WindowEvent e) {
+										                  mediaPlayerComponent.release();
+										                  System.exit(0);
+										              }
+										          });
+
+										          mediaPlayerComponent = new EmbeddedMediaPlayerComponent();
+										          frame.setContentPane(mediaPlayerComponent);
+
+										          frame.setVisible(true);
+
+										          mediaPlayerComponent.mediaPlayer().media().play(test);
+										      }
+									      };
+									      
+									      Thread appThread = new Thread() {
+									    	     public void run() {
+									    	         try {
+									    	             SwingUtilities.invokeAndWait(torun);
+									    	         }
+									    	         catch (Exception e) {
+									    	             e.printStackTrace();
+									    	         }
+									    	         System.out.println("Finished on " + Thread.currentThread());
+									    	     }
+									    	 };
+									    	 appThread.start();
+									    	 
+									    	 /*
+										SwingUtilities.in(new Runnable() 
+									      {
+										      public void run() 
+										      {
+										        JFrame frame = new JFrame("A GUI");
+										        frame.setBounds(100, 100, 600, 400);
+										        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+									
+										        EmbeddedMediaPlayerComponent mediaPlayer = new EmbeddedMediaPlayerComponent();
+										        frame.setContentPane(mediaPlayer);
+									
+										        frame.setVisible(true);
+									
+										        //play the StreamMedia object I've created
+										        mediaPlayer.mediaPlayer().media().play(test);
+										      }
+									      });*/
+										
+										/*dis = new DataInputStream(new BufferedInputStream(cacheConn.getInputStream()));
 										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
 										int n = -1; // default out of range value
 										long bytesRead = 0L; // just for debug puposes TODO: remove this in the final version
@@ -262,7 +342,7 @@ public class ProxyFrontend implements Runnable
 											dos.flush();
 											bytesRead += n; 
 										}
-										System.out.println("Number of bytes read: <" + bytesRead + ">");
+										System.out.println("Number of bytes read: <" + bytesRead + ">");*/
 										done = true;
 										break;
 									}
@@ -289,11 +369,21 @@ public class ProxyFrontend implements Runnable
 								catch(IOException ioe)
 								{
 									ioe.printStackTrace();
-								}
+								} /*catch (InvocationTargetException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}*/ /*catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}*/
 							}
 							if(!done)
 							{
 								//No server of L2 had the resource, try to ask in database
+								System.out.println("No server has the resouce in cache!");
 								Random generator = new Random(System.currentTimeMillis());
 								int cacheRand = generator.nextInt(updatedlist.size()); // int in [0,numCaches)
 								Pair<String,Integer> cacheSelected = updatedlist.get(cacheRand);
@@ -386,6 +476,60 @@ public class ProxyFrontend implements Runnable
 		}
 	}
 
+	
+	//VLC trial
+	public static class StreamMedia extends DefaultCallbackMedia
+	{
+
+		private BufferedInputStream stream;
+		private final int BUF_LENGTH = 1024;
+
+		public StreamMedia(BufferedInputStream stream) {
+			// 512 bytes to read per call to onRead
+			super(false, 1024);
+			this.stream = stream;
+		}
+
+		@Override
+		protected int onRead(byte[] arg0, int arg1) throws IOException {
+			int n = 0;
+			while((n = stream.read(arg0)) <= 0)
+			{
+				try {
+					wait(100);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			//int amnt = stream.read(arg0, 0, BUF_LENGTH);
+			return n;
+		}
+		@Override
+		protected void onClose() {
+			try {
+				stream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		@Override
+		protected long onGetSize() {
+			return BUF_LENGTH;
+		}
+
+		@Override
+		protected boolean onOpen() {
+			return true;
+		}
+
+		@Override
+		protected boolean onSeek(long arg0) {
+			return false;
+		}
+
+	}
 
 
 }
