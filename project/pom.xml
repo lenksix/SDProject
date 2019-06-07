@@ -105,11 +105,10 @@
 	    <version>5.4</version>
 	</dependency>
 	
-	<!-- VLCJ Hopefully the last -->
 	<dependency>
-    <groupId>uk.co.caprica</groupId>
-    <artifactId>vlcj</artifactId>
-    <version>4.1.0</version>
+	    <groupId>uk.co.caprica</groupId>
+	    <artifactId>vlcj</artifactId>
+	    <version>4.1.0</version>
 	</dependency>
 
 	<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->

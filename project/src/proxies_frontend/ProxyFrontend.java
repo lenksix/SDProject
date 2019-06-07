@@ -51,8 +51,12 @@ public class ProxyFrontend implements Runnable
 	final static int WAIT_TIME = 15000;
 	private final static int C_SIZE = 1000; // size of each chunk of the file in bytes
 	
-	private static HashMap<String, Integer> l2Map; // list of L2 servers <IP, PORT>
-	private static ReentrantLock mapLock; // need the lock for the updates on l2 list
+	
+	final static int RMI_FRONTEND_REG_PORT = 11200; // default port for frontend rmi registry
+	final static String RMI_NAMING_CL = "ManageCacheList"; // Name of the Cache List service
+	rmi_servers.CacheListManager server;
+	
+
 	private static List<Socket> sockAlive;
 	private static ReentrantLock lockSockets;
 	private static Condition socketAvailable;
@@ -68,8 +72,6 @@ public class ProxyFrontend implements Runnable
 		ServerSocket serverSock = null;
 		
 		sockAlive = new LinkedList<Socket>();
-		l2Map = new HashMap<String, Integer>(); 
-		mapLock = new ReentrantLock();
 		lockSockets = new ReentrantLock();
 		socketAvailable = lockSockets.newCondition();
 		
@@ -77,12 +79,10 @@ public class ProxyFrontend implements Runnable
 		{
 			serverSock = new ServerSocket(DEFAULT_PORT);
 			System.out.println("Ok, Serversocket <proxy> created!");
-
-			//TODO: need a distributed structure of l2 servers!!
 			
-			manager = new ManageCacheList(l2Map, mapLock);
-			new Thread(manager).start();
-			//l2Map.put("localhost", 28517); // just for test
+			// Server for requesting remote methods
+			Registry registry = LocateRegistry.getRegistry(RMI_FRONTEND_REG_PORT);
+			server = (rmi_servers.CacheListManager) registry.lookup(RMI_NAMING_CL);
 			
 			//TODO: need to instantiate a class that updates the map.. pings etc..
 			
@@ -92,6 +92,9 @@ public class ProxyFrontend implements Runnable
 		{
 			System.err.println("Failed to instatiate the <proxy> serversocket ");
 			ioe.printStackTrace();
+		} catch (NotBoundException nbe)
+		{
+			nbe.printStackTrace();
 		}
 		
 		while (true)
@@ -128,7 +131,6 @@ public class ProxyFrontend implements Runnable
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	public void run()
 	{
@@ -190,6 +192,7 @@ public class ProxyFrontend implements Runnable
 				DataOutputStream dos = null;
 				byte[] buffer = new byte[C_SIZE];
 				boolean done = false;
+				HashMap<String, Integer> l2Map;
 
 				// get requests 
 				while (scannerClient.hasNextLine())
@@ -211,18 +214,18 @@ public class ProxyFrontend implements Runnable
 							// GET VIDEO ID_VID
 							
 							//need to know the available caches
-							mapLock.lock();
 							try
 							{
+								l2Map = server.getListL2();
 								for (Map.Entry<String, Integer> entry : l2Map.entrySet())
 								{
 									// make a copy
 									updatedlist.add(new Pair<String, Integer>(entry.getKey(), entry.getValue()));
 								}
 							}
-							finally
+							catch(RemoteException re)
 							{
-								mapLock.unlock();
+								re.printStackTrace();
 							}
 							
 							// Select servers at random -> not the best method but ok for our purposes..
@@ -233,7 +236,8 @@ public class ProxyFrontend implements Runnable
 							{
 								try
 								{
-									// Ask each proxy if it has the resource
+									System.err.println("Ci passo 1");
+									// Ask each proxy if they have the resource
 									cacheConn = new Socket(pair.getKey(), pair.getValue());
 									
 									scannerCache = new Scanner(cacheConn.getInputStream());
@@ -243,26 +247,31 @@ public class ProxyFrontend implements Runnable
 									pwCache.flush();
 									
 									cacheResponse = scannerCache.nextLine(); // Assume it is alive
-									System.out.println("Prima del parsing..");
 									if(cacheResponse.trim().toLowerCase().equals("200 ok"))
 									{
+										System.err.println("Ci passo 2");
 										// I have found the resource!!
 										pwClient.println("200 OK");
 										pwClient.flush();
 										
-										dis = new DataInputStream(new BufferedInputStream(cacheConn.getInputStream()));
-										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-										int n = -1; // default out of range value
-										long bytesRead = 0L; // just for debug puposes TODO: remove this in the final version
-										while((n = dis.read(buffer)) != -1)
+										// Expected STREAMING AT <URL>
+										String[] streaming = scannerCache.nextLine().split(" ");
+										if(streaming[0].equals("STREAMING") && streaming[1].equals("AT"))
 										{
-											dos.write(buffer, 0, n);
-											dos.flush();
-											bytesRead += n; 
+											String url = streaming[2];
+											//readVideo(url);
+											pwClient.println("LINK AT " + url);
+											pwClient.flush();
+											//System.err.println("Video letto, tutto ok");
+											done = true;
+											break;
 										}
-										System.out.println("Number of bytes read: <" + bytesRead + ">");
-										done = true;
-										break;
+										else
+										{
+											System.err.println("Protocol was ot respected");
+											continue;
+										}
+										
 									}
 									else
 									{
@@ -282,8 +291,7 @@ public class ProxyFrontend implements Runnable
 										// this server does not have the resource
 										continue;
 									}
-								}
-								
+								}				
 								catch(IOException ioe)
 								{
 									ioe.printStackTrace();
@@ -315,17 +323,21 @@ public class ProxyFrontend implements Runnable
 										pwClient.println("200 OK");
 										pwClient.flush();
 										
-										dis = new DataInputStream(new BufferedInputStream(cacheConn.getInputStream()));
-										dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
-										int n = -1; // default out of range value
-										long bytesRead = 0L; // just for debug puposes TODO: remove this in the final version
-										while((n = dis.read(buffer)) != -1)
+										// Expected STREAMING AT <URL>
+										String[] streaming = scannerCache.nextLine().split(" ");
+										if(streaming[0].equals("STREAMING") && streaming[1].equals("AT"))
 										{
-											dos.write(buffer, 0, n);
-											dos.flush();
-											bytesRead += n; 
+											
+											String url = streaming[2];
+											pwClient.println("LINK AT " + url);
+											pwClient.flush();
+											//readVideo(url);
 										}
-										System.out.println("Number of bytes read: <" + bytesRead + ">");
+										else
+										{
+											System.err.println("Protocol was not respected");
+											continue;
+										}
 									}
 									else if(cacheResponse.toLowerCase().equals("404 not found"))
 									{
@@ -345,8 +357,7 @@ public class ProxyFrontend implements Runnable
 								catch(IOException ioe)
 								{
 									ioe.printStackTrace();
-								}		
-								
+								}						
 							}
 							else
 							{
@@ -383,7 +394,5 @@ public class ProxyFrontend implements Runnable
 			
 		}
 	}
-
-
 
 }

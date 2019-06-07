@@ -1,0 +1,91 @@
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+
+
+import uk.co.caprica.vlcj.component.EmbeddedMediaPlayerComponent;
+import uk.co.caprica.vlcj.discovery.NativeDiscovery;
+import uk.co.caprica.vlcj.player.media.callback.DefaultCallbackMedia;
+
+public class Main {
+
+  public static class StreamMedia extends DefaultCallbackMedia{
+
+    private InputStream stream;
+
+    public StreamMedia(InputStream stream, String[] mediaOptions) {
+      //512 bytes to read per call to onRead
+      super(false, 512, mediaOptions);
+      this.stream = stream;
+    }
+
+    @Override
+    protected int onRead(byte[] arg0, int arg1) throws IOException {
+      int amnt = stream.read(arg0);
+      return amnt;
+    }
+
+    @Override
+    protected void onClose() {
+      try {
+        stream.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
+    @Override
+    protected long onGetSize() {
+      return 0;
+    }
+
+    @Override
+    protected boolean onOpen() {
+      return true;
+    }
+
+    @Override
+    protected boolean onSeek(long arg0) {
+      return false;
+    }
+
+  }
+
+  public static void main(String[] args) throws Exception{    
+      //The url I'm streaming to my machine.
+      //It's a ".ts" resource 
+      URL url = new URL("STREAM URL");
+
+      HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+      connection.setUseCaches(false);
+      connection.connect();
+
+      StreamMedia test = new StreamMedia(connection.getInputStream(), new String[0]);
+
+
+      //Just sets up my VLC JFrame. Right from the vlc tutorials
+      new NativeDiscovery().discover();
+      SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        JFrame frame = new JFrame("A GUI");
+        frame.setBounds(100, 100, 600, 400);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        EmbeddedMediaPlayerComponent mediaPlayer = new EmbeddedMediaPlayerComponent();
+        frame.setContentPane(mediaPlayer);
+
+        frame.setVisible(true);
+
+        //play the StreamMedia object I've created
+        mediaPlayer.getMediaPlayer().playMedia(test);
+      }
+    });
+
+    }
+    
+   // SANTO GRAL
+   cvlc -vvv tesseratoPD.mp4 --sout '#transcode{vcodec=h264,acodec=mp3,samplerate44100}:std{access=http,mux=ffmpeg{mux=flv},dst=localhost:9090/stream.flv}'
+
