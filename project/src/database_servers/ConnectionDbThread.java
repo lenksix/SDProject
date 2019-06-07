@@ -1,12 +1,15 @@
 package database_servers;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -48,10 +51,10 @@ class ConnectionDbThread implements Runnable
 		boolean done = false;
 		Scanner clientReq = null;
 		PrintWriter clientResp = null;
-		// connect to the cluster
-		// TODO: Spostare su RMI
-		//session.execute("USE streaming;");
 		CheckerDB check = null;
+		Socket rdbSocket = null;
+		Scanner scannerRDB = null;
+		PrintWriter pwRDB = null;
 		try
 		{
 			Registry registry = LocateRegistry.getRegistry(rmi_port);
@@ -60,7 +63,7 @@ class ConnectionDbThread implements Runnable
 			try
 			{
 				clientReq = new Scanner(cliSock.getInputStream());
-				clientResp = new PrintWriter(cliSock.getOutputStream());
+				clientResp = new PrintWriter(cliSock.getOutputStream(), true);
 			} 
 			catch (IOException ioe)
 			{
@@ -81,67 +84,70 @@ class ConnectionDbThread implements Runnable
 				{
 					response = check.getMessage();
 					clientResp.println(response);
-					clientResp.flush();
 				} 
 				else
 				{
 					query = check.getMessage();
 					System.out.println(query);
-					// TODO: Spostare su RMI
 					String json = server.searchQuery(query);
 	
 					// manage the response for the query to the database
 					// we have to decide the appropriate response
 					response = "";
 					String resourcePath = "";
-					/*for (Row row : queryResult)
-					{
-						resourcePath += row.getString(0);
-						System.out.println(resourcePath);
-					}*/
+					String ipDb = null;
+					int portDb = -1;
+					
 					JSONArray array = new JSONArray(json);
 					for(int j = 0; j < array.length(); j++)
 					{
 						JSONObject jsonObj = array.getJSONObject(j);
-						String ip = jsonObj.getString("path");
-						resourcePath += ip;
+						ipDb = jsonObj.getString("ip");
+						portDb = jsonObj.getInt("port");
 					}
 	
 					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the
 					// result of the query
-					if(resourcePath.isEmpty())
+					if(portDb == -1)
 						response = notFound;
 					else
 					{
-						response = "200 OK ";// + response;
-						clientResp.println(response);
-						clientResp.flush();
-	
-						try
+						rdbSocket = new Socket(ipDb, portDb); 
+						scannerRDB = new Scanner(rdbSocket.getInputStream());
+						pwRDB = new PrintWriter(rdbSocket.getOutputStream(), true);
+						
+						pwRDB.println("GET VIDEO " + check.getResource());
+						String responseRDB = scannerRDB.nextLine();
+						if(!responseRDB.equals("200 OK"))
 						{
-							DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
-							FileInputStream fileStream = new FileInputStream(new File(resourcePath));
-							int n = 0;
-							byte[] chunck = new byte[CHUNK_SIZE];
-							while ((n = fileStream.read(chunck)) != -1)
-							{
-								dos.write(chunck, 0, n);
-								dos.flush();
-							}
-							dos.close();
-							fileStream.close();
-						} 
-						catch (IOException ioe3)
-						{
-							ioe3.printStackTrace();
+							response = notFound;
+							clientResp.println(response);
 						}
-	
+						else 
+						{
+							response = "200 OK ";
+							clientResp.println(response);
+							try
+							{
+								DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(cliSock.getOutputStream()));
+								DataInputStream dis = new DataInputStream(new BufferedInputStream(rdbSocket.getInputStream()));
+								int n = 0;
+								byte[] chunck = new byte[CHUNK_SIZE];
+								while ((n = dis.read(chunck)) != -1)
+								{
+									dos.write(chunck, 0, n);
+									dos.flush();
+								}
+								dos.close();
+								dis.close();
+							} 
+							catch(IOException ioe2)
+							{
+								ioe2.printStackTrace();
+							}
+						}
 					}
-					// response = UtilitiesDb.getResponse(queryResult);
-					clientResp.println(response);
-					clientResp.flush();
 					done = true;
-					System.out.println(response);
 				}
 			}
 			System.out.println("Closing the connection with a server L2.");
@@ -150,6 +156,7 @@ class ConnectionDbThread implements Runnable
 				clientReq.close();
 				clientResp.close();
 				cliSock.close();
+				rdbSocket.close();				
 			} 
 			catch (IOException ioe)
 			{
@@ -159,6 +166,14 @@ class ConnectionDbThread implements Runnable
 		catch(RemoteException | NotBoundException re )
 		{
 			re.printStackTrace();
+		} 
+		catch(UnknownHostException e)
+		{
+			e.printStackTrace();
+		} 
+		catch(IOException e)
+		{
+			e.printStackTrace();
 		}
 	}
 }

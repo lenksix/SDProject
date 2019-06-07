@@ -30,4 +30,9 @@ public class CheckerDB
 	{
 		return query;
 	}
+	
+	public String getResource()
+	{
+		return query.split(" ")[2];
+	}
 }

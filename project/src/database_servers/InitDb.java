@@ -7,6 +7,12 @@
 
 package database_servers;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
@@ -18,6 +24,8 @@ public class InitDb
 	{
 		Cluster cluster;
 		Session session;
+		
+		Connection conn = null;
 
 		// run cassandra in background if it is not (useful in Windows for example)
 		/*try
@@ -39,24 +47,49 @@ public class InitDb
 					+ " 'class': 'SimpleStrategy', " + " 'replication_factor': '1' " + "};");
 			// Connect to the keyspace already instatiated
 			session.execute("USE streaming;");
-			// Create the table
-			session.execute("CREATE TABLE IF NOT EXISTS channel_vids("
-					+ "channel_name text," 
-					+ "vids set<text>, " // where list is a list of url
-					+ "PRIMARY KEY(channel_name));");
-
-			// create the table of url-path for each video
-			session.execute("CREATE TABLE IF NOT EXISTS vid_path("
-					+ "url text," 
-					+ "path text," 
-					+ "PRIMARY KEY(url));");
 			
 			session.execute("CREATE TABLE IF NOT EXISTS ip_cache("
 					+ "ip text,"
 					+ "port int,"
 					+ "PRIMARY KEY(ip, port));");
 			
-			// System.out.println("Table vid_path created!");
+			session.execute("CREATE TABLE IF NOT EXISTS vid_location("
+					+ "id_vid text,"
+					+ "ip text,"
+					+ "port int,"
+					+ "PRIMARY KEY(id_vid));");
+
+			//Loading database Driver
+			try
+			{
+				Class.forName("org.postgresql.Driver");
+				System.out.println("JDBC Driver for PostreSQL loaded succesfully.");
+			}
+			catch(ClassNotFoundException e)
+			{
+				e.printStackTrace();
+				System.err.println("Driver not loaded!");
+				System.exit(1);
+			}
+
+			try
+			{
+				conn = DriverManager.getConnection("jdbc:postgresql://localhost/postgres", "postgres", "postgres"); 
+				conn.createStatement().execute("CREATE DATABASE king;");
+				
+				conn = DriverManager.getConnection("jdbc:postgresql://localhost/king", "postgres", "postgres");
+				conn.createStatement().execute("CREATE TABLE vid_path(" + 
+						"	id_vid VARCHAR(100)," + 
+						"	path VARCHAR(1000) NOT NULL," + 
+						"	PRIMARY KEY(id_vid)" + 
+						");");
+			}
+			catch(SQLException e)
+			{
+				System.err.println("Something went wrong with your SQL query. Here is the exception code: \n");
+				e.printStackTrace();
+			}
+			
 			session.close();
 			cluster.close();
 		} 

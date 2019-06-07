@@ -64,7 +64,6 @@ public class ProxyFrontend implements Runnable
 	private static List<Socket> sockAlive;
 	private static ReentrantLock lockSockets;
 	private static Condition socketAvailable;
-	private static ManageCacheList manager;
 	
 	public static void main(String[] args)
 	{

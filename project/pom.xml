@@ -32,6 +32,13 @@
     	<version>19.0</version>
 	</dependency>
 	
+	<!-- https://mvnrepository.com/artifact/org.postgresql/postgresql -->
+	<dependency>
+		<groupId>org.postgresql</groupId>
+		<artifactId>postgresql</artifactId>
+		<version>42.2.5</version>
+	</dependency>
+	
 	
 	<!-- https://mvnrepository.com/artifact/com.codahale.metrics/metrics-core -->
 	<dependency>
