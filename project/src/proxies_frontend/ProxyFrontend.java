@@ -245,8 +245,10 @@ public class ProxyFrontend implements Runnable
 										if(streaming[0].equals("STREAMING") && streaming[1].equals("AT"))
 										{
 											String url = streaming[2];
-											readVideo(url);
-											System.err.println("Video letto, tutto ok");
+											//readVideo(url);
+											pwClient.println("LINK AT " + url);
+											pwClient.flush();
+											//System.err.println("Video letto, tutto ok");
 											done = true;
 											break;
 										}
@@ -311,8 +313,11 @@ public class ProxyFrontend implements Runnable
 										String[] streaming = scannerCache.nextLine().split(" ");
 										if(streaming[0].equals("STREAMING") && streaming[1].equals("AT"))
 										{
+											
 											String url = streaming[2];
-											readVideo(url);
+											pwClient.println("LINK AT " + url);
+											pwClient.flush();
+											//readVideo(url);
 										}
 										else
 										{
@@ -376,20 +381,4 @@ public class ProxyFrontend implements Runnable
 		}
 	}
 
-	private boolean readVideo(String url)
-	{
-		Process pr;
-		try
-		{
-			Runtime rt = Runtime.getRuntime();
-			String command = "vlc " + url;
-			pr = rt.exec(command);
-		}
-		catch(IOException ioe)
-		{
-			ioe.printStackTrace();
-			return false;
-		}
-		return true;
-	}
 }
