@@ -91,8 +91,8 @@ public class ManageCS extends Thread
 				
 				// TODO: decide the protocol of the connection between the L2 server and the CacheRegisterThread
 				// TODO: Spostare su RMI
-				Thread cacheRegisterThread = new Thread(new CacheServicesThread(cacheServerSock, rmi_port, rmi_name));
-				cacheRegisterThread.start();
+				//Thread cacheRegisterThread = new Thread(new CacheServicesThread(cacheServerSock, rmi_port, rmi_name));
+				//cacheRegisterThread.start();
 			} 
 			catch(IOException ioe)
 			{

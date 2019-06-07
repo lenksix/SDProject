@@ -65,9 +65,6 @@ public class ManageDb
 			{
 				ioe.printStackTrace();
 			}
-			// TODO: Spostare su RMI
-			ManageCS mcs = new ManageCS(RMI_PORT, RMI_NAME);
-			mcs.start();
 			
 			try 
 			{
@@ -98,11 +95,9 @@ public class ManageDb
 					}
 				}
 			}
-			finally 
+			catch(Exception e)
 			{
-				mcs.interrupt();
-				/*session.close();
-				cluster.close();*/
+				e.printStackTrace();
 			}
 		}
 		catch(RemoteException | NotBoundException re)

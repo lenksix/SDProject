@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -14,6 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javafx.util.Pair;
+import rmi_servers.ListL2Manager;
 
 public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.CacheListManager
 {
@@ -23,6 +25,9 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 	private static final String localhost = "localhost";
 	private static final int CACHE_SERVER_MANAGER_PORT = 10000;
 	private static final String listServer = "LIST SERVER";
+	
+	private static final int RMI_REGISTER_SERVICE_PORT = 11300;
+	private static final String RMI_REGISTER_SERVICE_NAME = "ListL2Manager";
 	
 	protected ManageCacheList() throws RemoteException
 	{
@@ -48,10 +53,7 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 		{
 			re.printStackTrace();
 		}
-		
-		Socket listSocket = null;
-		ObjectInputStream listScanner = null;
-		ObjectOutputStream listStream = null;
+
 		ArrayList<Pair<String, Integer>> servers = null;
 		
 		System.err.println("Ci passo");
@@ -66,7 +68,7 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 			mapLock.writeLock().unlock();
 		}
 		// ---------------------------------------
-		/*
+		
 		while(true)
 		{
 			try
@@ -76,60 +78,39 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 				System.out.println("I am awake");
 				try
 				{
-					listSocket = new Socket(localhost, CACHE_SERVER_MANAGER_PORT);
-					listStream = new ObjectOutputStream(listSocket.getOutputStream());
-					listScanner = new ObjectInputStream(listSocket.getInputStream());
-					listStream.writeObject(listServer);
-					listStream.flush();
-	
-					String listResponse = (String) listScanner.readObject();
-					if(listResponse.equalsIgnoreCase(listServer)) 
-					{
-						servers = (ArrayList<Pair<String, Integer>>) listScanner.readObject();
-						System.out.println("Free the map" + Thread.currentThread().getId());
-						mapLock.writeLock().lock();
-						try
-						{
-							l2Map.clear();
-							for(Pair<String, Integer> server : servers)
-							{
-								l2Map.put(server.getKey(), server.getValue());
-								System.out.println("updated + < " + server.getKey() + " > and < " + server.getValue() + " >");
-							}
-							
-						}
-						finally 
-						{
-							mapLock.writeLock().unlock();
-						}
-					}
-					else
-					{
-						System.out.println("Undefined contol sequence in requesting the list of active servers: quit.");
-						System.exit(1);
-					}
-				}
-				catch(ClassNotFoundException | IOException ioe)
-				{
-					ioe.printStackTrace();
-				}
-				finally
-				{
+					Registry registry = LocateRegistry.getRegistry(RMI_REGISTER_SERVICE_PORT);
+					ListL2Manager server = (ListL2Manager) registry.lookup(RMI_REGISTER_SERVICE_NAME);
+					servers = server.listServers();
+					System.out.println("Free the map" + Thread.currentThread().getId());
+					mapLock.writeLock().lock();
 					try
 					{
-						listSocket.close();
+						l2Map.clear();
+						for(Pair<String, Integer> serv : servers)
+						{
+							l2Map.put(serv.getKey(), serv.getValue());
+							System.out.println("updated + < " + serv.getKey() + " > and < " + serv.getValue() + " >");
+						}
+						
 					}
-					catch(IOException ioe)
+					finally 
 					{
-						ioe.printStackTrace();
+						mapLock.writeLock().unlock();
 					}
+				}
+				catch(IOException ioe)
+				{
+					ioe.printStackTrace();
+				} catch (NotBoundException nbe)
+				{
+					nbe.printStackTrace();
 				}
 			}
 			catch(InterruptedException ie)
 			{
 				ie.printStackTrace();
 			}
-		}*/
+		}
 	}
 
 	

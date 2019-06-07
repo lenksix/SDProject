@@ -15,6 +15,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,8 +27,9 @@ import com.datastax.driver.core.Session;
 
 import javafx.util.Pair;
 import rmi_servers.SessionManager;
+import rmi_servers.SessionManagerImpl;
 
-public class CacheServicesThread implements Runnable
+public class CacheServicesThread extends UnicastRemoteObject implements rmi_servers.ListL2Manager
 {
 	private Socket cacheServerSock = null;
 	//private Session session = null;
@@ -36,134 +38,60 @@ public class CacheServicesThread implements Runnable
 	private static final String registrationError = "620 REGISTRATION ERROR";
 	private static final String listServer = "LIST SERVER";
 	private static final String unknownRequest = "UNKNOWN REQUEST";
-	private int rmi_port;
-	private String rmi_name;
+	private int RMI_PORT = 11099; // suppose this class can get this port!
+	private static final String RMI_NAME = "SessionManager"; // suppose this class can get this name with some protocol!
 	
-	public CacheServicesThread(Socket cacheServerSock, int rmi_port, String rmi_name)
+	public CacheServicesThread() throws RemoteException
 	{
-		this.cacheServerSock = cacheServerSock;
-		// TODO: modify constructor RMI
-		this.rmi_port = rmi_port;
-		this.rmi_name = rmi_name;
+		super();
 	}
 	
-	@Override
-	public void run()
-	{		
-		ObjectInputStream oisRequest = null;
-		ObjectOutputStream oosResponse = null;
-		
-		try
-		{
-			oisRequest = new ObjectInputStream(cacheServerSock.getInputStream());
-			oosResponse = new ObjectOutputStream(cacheServerSock.getOutputStream());
-		} 
-		catch (IOException ioe)
-		{
-			ioe.printStackTrace();
-		}
-		
-		String request = null;
-		try
-		{
-			request = (String) oisRequest.readObject();
-			if(request.equalsIgnoreCase(registerMe))
-			{
-				serverRegister(oisRequest, oosResponse);
-			}
-			else if(request.equalsIgnoreCase(listServer))
-			{
-				listServer(oosResponse);
-			}
-		}
-		catch(ClassNotFoundException | IOException e)
-		{
-			try
-			{
-				oosResponse.writeObject(unknownRequest);
-				oosResponse.flush();
-			}
-			catch(IOException ioe) 
-			{
-				ioe.printStackTrace();
-			}
-			e.printStackTrace();
-		}
-		finally 
-		{
-			try
-			{
-				oisRequest.close();
-				oosResponse.close();
-				cacheServerSock.close();
-			} 
-			catch(IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
-		}
-	}
 
-	
-	private void serverRegister(ObjectInputStream oisRequest, ObjectOutputStream oosResponse) 
+	@Override
+	public String serverRegister(String ip, int port) 
 	{
-		Pair<String, Integer> registerPair = null;
 		try 
 		{
-			Registry registry = LocateRegistry.getRegistry(rmi_port);
-			SessionManager server = (SessionManager) registry.lookup(rmi_name);
-			registerPair = (Pair<String, Integer>) oisRequest.readObject();
-			String ip = registerPair.getKey();
-			int port = registerPair.getValue();
+			Registry registry = LocateRegistry.getRegistry(RMI_PORT);
+			SessionManager server = (SessionManager) registry.lookup(RMI_NAME);
+			
 			
 			String registerQuery = UtilitiesDb.insertIPCache(ip, port);
-			// TODO: Spostare su RMI la registrazioe, serve un metodo!
-			/*session.execute("USE streaming;");
-			session.execute(registerQuery);*/
 			int result = server.registerQuery(registerQuery);
 			
 			if(result == 0)
-			{
-				oosResponse.writeObject(registrationOK);
-				oosResponse.flush();
-					
+			{	
 				System.out.println("Server cache at " + ip + " " + port + " registered");
+				return registrationOK;	
 			}
 			else
 			{
 				System.err.println("Something wrong during the registration");
+				return registrationError;	
 			}
 		} 
-		catch(ClassNotFoundException | IOException | NotBoundException e) 
+		catch(IOException | NotBoundException e) 
 		{
-			try 
-			{
-				oosResponse.writeObject(registrationError);
-				oosResponse.flush();
-			}
-			catch(IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
 			e.printStackTrace();
+			return registrationError;
 		}		
 	}
+
 	
 	/**
 	 * This method write a list object of active cache servers in the given ObjectOutputStream passed by reference.
 	 * @param oosResponse the stream where to write the list of active cache servers
 	 */
-	private void listServer(ObjectOutputStream oosResponse) 
+	@Override
+	public ArrayList<Pair<String, Integer>> listServers() 
 	{
-		List<Pair<String, Integer>> listActiveServer = new ArrayList<>();
+		ArrayList<Pair<String, Integer>> listActiveServer = new ArrayList<>();
 		try
 		{
-			Registry registry = LocateRegistry.getRegistry(rmi_port);
-			SessionManager server = (SessionManager) registry.lookup(rmi_name);
+			Registry registry = LocateRegistry.getRegistry(RMI_PORT);
+			SessionManager server = (SessionManager) registry.lookup(RMI_NAME);
 			
 			String listServerQuery = UtilitiesDb.selectFromIPCache();
-			//TODO: Spostare su RMI sta roba!!
-			//ResultSet rSet = session.execute(listServerQuery);
 			String json = server.searchQuery(listServerQuery);
 			
 			JSONArray array = new JSONArray(json); 
@@ -175,29 +103,29 @@ public class CacheServicesThread implements Runnable
 				int port = jsonObj.getInt("port");
 				listActiveServer.add(new Pair<>(ip, port));
 			}
-			
-			/*rSet.forEach(row -> {
-				String ip = row.getString("ip");
-				int port = row.getInt("port");
-				listActiveServer.add(new Pair<>(ip, port));
-			});*/
-			
-			try
-			{
-				oosResponse.writeObject(listServer);
-				oosResponse.flush();
-				oosResponse.writeObject(listActiveServer);
-				oosResponse.flush();
-			} 
-			catch(IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
+			return listActiveServer;
 		}
 		catch(RemoteException | NotBoundException re)
 		{
 			re.printStackTrace();
 		}
+		return null;
 		
+	}
+	
+	public static void main(String[] args)
+	{
+		try
+		{
+			// Binding to the RMI registry
+			SessionManager server = new SessionManagerImpl();
+			Registry registry = LocateRegistry.createRegistry(11300);
+			registry.rebind("ListL2Manager", server);
+			System.out.println("Binded to RMI registry, Server is Alive!");
+		}
+		catch(RemoteException re)
+		{
+			re.printStackTrace();
+		}
 	}
 }

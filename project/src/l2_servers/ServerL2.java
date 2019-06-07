@@ -20,7 +20,10 @@ import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.NotBoundException;
 import java.rmi.UnknownHostException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Scanner;
@@ -32,6 +35,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.commons.io.FilenameUtils;
 
 import javafx.util.Pair;
+import rmi_servers.ListL2Manager;
 
 public class ServerL2
 {
@@ -61,6 +65,9 @@ public class ServerL2
 	private static ReentrantLock lockMap = null;
 	
 	private static int STREAM_PORT = 23456; // Default streaming port for http responses (VIDS)
+	
+	private static final int RMI_REGISTER_SERVICE_PORT = 11300;
+	private static final String RMI_REGISTER_SERVICE_NAME = "ListL2Manager";
 	
 	public static void main(String[] args)
 	{
@@ -160,21 +167,13 @@ public class ServerL2
 		}
 		
 		// I have to register this server on the ip_cache table
-		/*
-		Socket registerSocket = null;
-		ObjectInputStream registerScanner = null;
-		ObjectOutputStream registerStream = null;
+		
 		try
 		{
-			registerSocket = new Socket(localhost, CACHE_SERVER_MANAGER_PORT);
-			registerStream = new ObjectOutputStream(registerSocket.getOutputStream());
-			registerScanner = new ObjectInputStream(registerSocket.getInputStream());
-			registerStream.writeObject(registerMe);
-			registerStream.flush();
-			registerStream.writeObject(new Pair<>(localhost, SOCKET_PORT));
-			registerStream.flush();
+			Registry registry = LocateRegistry.getRegistry(RMI_REGISTER_SERVICE_PORT);
+			ListL2Manager server = (ListL2Manager) registry.lookup(RMI_REGISTER_SERVICE_NAME);
 			
-			String registerResponse = (String) registerScanner.readObject();
+			String registerResponse = server.serverRegister(localhost, SOCKET_PORT);
 			if(registerResponse.equalsIgnoreCase(registrationOK)) {}
 			else if(registerResponse.equalsIgnoreCase(registrationError))
 			{
@@ -186,23 +185,13 @@ public class ServerL2
 				System.exit(1);
 			}
 		} 
-		catch(ClassNotFoundException | IOException e) 
+		catch(IOException e) 
 		{
 			e.printStackTrace();
-		}
-		finally
+		} catch (NotBoundException nbe)
 		{
-			try
-			{
-				registerSocket.close();
-				registerStream.close();
-				registerScanner.close();
-			} 
-			catch(IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
-		}*/
+			nbe.printStackTrace();
+		}
 		
 		try 
 		{
