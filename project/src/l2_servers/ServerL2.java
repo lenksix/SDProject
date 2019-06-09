@@ -366,6 +366,7 @@ public class ServerL2
 							// and bring it in the cache -> we need to know the most recent
 
 							// First: check if the resource is in cache
+							ReentrantReadWriteLock lockResource = null;
 							lockMap.lock();
 							try
 							{
@@ -373,13 +374,15 @@ public class ServerL2
 								{
 									System.out.println("Took the lock on Map - Get in_cache");
 								}
-								// I was asked to retrieve the resource in database but i ave it in cache
+								// I was asked to retrieve the resource in database but i have it in cache
 								if(vidsCache.containsKey(check.getResource()))
 								{
 									boolean updatedResource = false;
+									
 									try 
 									{
 										resource = vidsCache.get(check.getResource());
+										lockResource = resource.getValue(); // This is for performances
 										if(VERBOSE >= 50)
 										{
 											System.out.println("Getting the timestamp - Get in_cache" + resource.getKey().getPath() + ">");
@@ -391,14 +394,16 @@ public class ServerL2
 											//get the path of the resource
 											videoCachePath = resource.getKey().getPath();
 											// need to read the resource so need the read lock
-											resource.getValue().readLock().lock();
+											//resource.getValue().readLock().lock();
 										}
 										else
 										{
 											updatedResource = false;
 											videoCachePath = resource.getKey().getPath();
+											
+											
 											// need to read the resource so need the read lock
-											resource.getValue().writeLock().lock();
+											//resource.getValue().writeLock().lock();
 											resource.getKey().setTimeStamp(System.currentTimeMillis());
 										}
 									}
@@ -412,6 +417,7 @@ public class ServerL2
 									}
 									if(updatedResource)
 									{
+										lockResource.readLock().lock();
 										try
 										{
 											//Now that i have the read lock and I know file is readable, I can send the file!
@@ -432,12 +438,13 @@ public class ServerL2
 										finally
 										{
 											// unlocking the read on the resource
-											resource.getValue().readLock().unlock();
+											lockResource.readLock().unlock();
 										}
 									}
 									// resource in cache but not updated need let's retrieve it from the db
 									else
 									{
+										lockResource.writeLock().lock();
 										try
 										{
 											dbSock = new Socket(dbAddress, dbPort);
@@ -454,29 +461,15 @@ public class ServerL2
 											response = scannerDb.nextLine();
 											if (Integer.parseInt((response.split(" ")[0])) == OK)
 											{
-												pwClient.println(response);
-												pwClient.flush();
+												//pwClient.println(response); // TODO: Why is this??.. should recall
+												//pwClient.flush();
 												DataInputStream dis = null;
 												FileOutputStream fos = null;
 												String path = cache_default_path + check.getResource();
 												
 												long readBytes = receiveVideofromDB(video, fos, dis, dbSock, path);
 												
-												System.out.println("Bytes read from database = " + readBytes);
-												
-												// Now that the video is in cache I can send it
-												pwClient.println("200 OK");
-												pwClient.flush();
-												
-												String url = createUrl(STREAM_PORT, videoCachePath);
-												pwClient.println("STREAMING AT " + url);
-												pwClient.flush();
-												
-												// stream the video
-												if(!sendVideo(videoCachePath))
-												{
-													System.err.println("Error in sending the video from brand new cache");
-												}
+												System.out.println("Bytes read from database = " + readBytes);		
 											}
 											else
 											{
@@ -490,7 +483,30 @@ public class ServerL2
 										}
 										finally
 										{
-											resource.getValue().writeLock().unlock();
+											lockResource.writeLock().unlock();
+										}
+										
+										// Now that i hve already updated the resource i can send the video
+										lockResource.readLock().lock();
+										try
+										{
+											// Now that the video is in cache I can send it
+											pwClient.println("200 OK");
+											pwClient.flush();
+											
+											String url = createUrl(STREAM_PORT, videoCachePath);
+											pwClient.println("STREAMING AT " + url);
+											pwClient.flush();
+											
+											// stream the video
+											if(!sendVideo(videoCachePath))
+											{
+												System.err.println("Error in sending the video from brand new cache");
+											}
+										}
+										finally
+										{
+											lockResource.readLock().unlock();
 										}
 									}
 								}
@@ -520,18 +536,15 @@ public class ServerL2
 										FileOutputStream fos = null;
 										String path = cache_default_path + check.getResource() ;
 
+										rwlRes = new ReentrantReadWriteLock(true); 
 										try 
 										{
 											//Insert the video in the "cache"
-											TupleVid newRes = new TupleVid((path + ".mp4"), System.currentTimeMillis());
-											rwlRes = new ReentrantReadWriteLock(true); 
+											TupleVid newRes = new TupleVid((path + ".mp4"), System.currentTimeMillis());		
 											if(vidsCache.put(check.getResource(), new Pair<TupleVid, ReentrantReadWriteLock>(newRes, rwlRes)) != null)
 											{
 												System.err.println("Some concurrency problem, the resource was already present in the map!!");
-											}
-											// get the write lock
-											rwlRes.writeLock().lock();
-											
+											}									
 										}
 										finally
 										{
@@ -539,12 +552,23 @@ public class ServerL2
 											lockMap.unlock();
 										}
 										
+										// get the write lock
+										rwlRes.writeLock().lock();
 										try
 										{
 											long readBytes = receiveVideofromDB(video, fos, dis, dbSock, path);
 				
 											System.out.println("Bytes read from database = " + readBytes);
-											
+										}
+										finally
+										{
+											rwlRes.writeLock().unlock();
+										}
+										
+										// Now that the video is in cache i can send it
+										rwlRes.readLock().lock();
+										try
+										{
 											// Now that the video is in cache I can send it
 											pwClient.println("200 OK");
 											pwClient.flush();
@@ -558,11 +582,10 @@ public class ServerL2
 											{
 												System.err.println("Error in sending the video from brand new cache");
 											}
-											
 										}
 										finally
 										{
-											rwlRes.writeLock().unlock();
+											rwlRes.readLock().unlock();
 										}
 										
 									} 
