@@ -7,6 +7,7 @@ public class ReadWriteSync
 {
 	private ReentrantReadWriteLock rwl;
 	private AtomicInteger readCounter;
+	
 	public ReadWriteSync(ReentrantReadWriteLock rwl)
 	{
 		this.rwl = rwl;
@@ -24,6 +25,4 @@ public class ReadWriteSync
 	{
 		return rwl;
 	}
-	
-	
 }

@@ -1,3 +1,4 @@
+/*
 /**
  * The class ManageCS (Manage cache servers) is used to manage the active server cache, 
  * adding them in the database as ip-port record and ping periodically to verify how many of them are active,
@@ -6,13 +7,12 @@
  * @author Andrea Bugin and Ilie Sarpe
  */
 
+/*
 package database_servers;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
-import com.datastax.driver.core.Session;
 
 public class ManageCS extends Thread
 {
@@ -21,11 +21,6 @@ public class ManageCS extends Thread
 	private int rmi_port;
 	private String rmi_name;
 	
-	// TODO: modificare il costruttore
-	/*public ManageCS(Session session)
-	{
-		this.session = session;
-	}*/
 	public ManageCS(int rmi_port, String rmi_name)
 	{
 		this.rmi_port = rmi_port;
@@ -41,7 +36,6 @@ public class ManageCS extends Thread
 		//session.execute("USE streaming;");
 		
 		//------------------- for test purpose, just to create some records in the table.
-		/* 
 		String q = UtilitiesDb.insertIPCache("192.168.1.1", 12345);
 		session.execute(q);
 		
@@ -58,7 +52,7 @@ public class ManageCS extends Thread
 		//column.forEach(x->System.out.println(x.getName()));
 		
 		rSet.forEach(row -> System.out.println(row.getString("ip") + " " + row.getInt("port")));
-		*/
+		
 		//------------------------------------------------------------------------------------------
 		
 		try
@@ -110,3 +104,4 @@ public class ManageCS extends Thread
 		}	
 	}
 }
+*/

@@ -19,13 +19,7 @@ public class PopulateDb
 		// pass the name of the file that specifies the entries to be put in the database i.e. "entry1" without quotes.
 		// The file is structured like this : <name_table> e.g. <name_table> = vid_path
 		// id_i value_i\n for each i=1,...,n (observe that for now only vid_path is supported)
-		
-		
-		/*if(args.length != 1) 
-		{
-			System.out.println("Not the correct number of parameters, only one is allowed!");
-			System.exit(1);
-		}*/
+
 		String filePop = "entry1"; 
 		try
 		{
@@ -88,3 +82,4 @@ public class PopulateDb
 		}
 	}
 }
+

@@ -3,6 +3,10 @@ package l2_servers;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/**
+ * UtilitiesL2 class: it contains few methods that are used frequently by the L2 servers.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class UtilitiesL2
 {
 

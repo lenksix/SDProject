@@ -1,9 +1,6 @@
 package proxies_frontend;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -11,12 +8,15 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javafx.util.Pair;
 import rmi_servers.ListL2Manager;
 
+/**
+ * Manage the list of the active servers in the proxy level
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.CacheListManager
 {
 	private static HashMap<String, Integer> l2Map; // list of L2 servers <IP, PORT>
@@ -45,7 +45,6 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 			// Binding to the RMI registry
 			rmi_servers.CacheListManager server = new ManageCacheList();
 			Registry registry = LocateRegistry.createRegistry(11200); // if no registry exists
-			//Registry registry = LocateRegistry.getRegistry(11099); if already instatiated by the back-end 
 			registry.rebind("ManageCacheList", server);
 			System.out.println("Binded to RMI registry, Server is Alive!");
 		}

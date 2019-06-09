@@ -8,22 +8,15 @@
 package database_servers;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.Socket;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.List;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Session;
 
 import javafx.util.Pair;
 import rmi_servers.SessionManager;
@@ -31,22 +24,20 @@ import rmi_servers.SessionManagerImpl;
 
 public class CacheServicesThread extends UnicastRemoteObject implements rmi_servers.ListL2Manager
 {
-	private Socket cacheServerSock = null;
-	//private Session session = null;
-	private static final String registerMe = "REGISTER ME";
 	private static final String registrationOK = "210 REGISTRATION DONE";
 	private static final String registrationError = "620 REGISTRATION ERROR";
-	private static final String listServer = "LIST SERVER";
-	private static final String unknownRequest = "UNKNOWN REQUEST";
 	private int RMI_PORT = 11099; // suppose this class can get this port!
 	private static final String RMI_NAME = "SessionManager"; // suppose this class can get this name with some protocol!
 	
+	/**
+	 * Create a CacheServicesThread
+	 * @throws RemoteException if any error occurs while creating the CacheServicesThread
+	 */
 	public CacheServicesThread() throws RemoteException
 	{
 		super();
 	}
 	
-
 	@Override
 	public String serverRegister(String ip, int port) 
 	{
@@ -77,11 +68,6 @@ public class CacheServicesThread extends UnicastRemoteObject implements rmi_serv
 		}		
 	}
 
-	
-	/**
-	 * This method write a list object of active cache servers in the given ObjectOutputStream passed by reference.
-	 * @param oosResponse the stream where to write the list of active cache servers
-	 */
 	@Override
 	public ArrayList<Pair<String, Integer>> listServers() 
 	{

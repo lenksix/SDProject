@@ -7,7 +7,6 @@
 package l2_servers;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -15,8 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -74,7 +71,7 @@ public class ServerL2
 		(new ServerL2()).exec(args);
 	}
 
-	public void exec(String[] args)
+	private void exec(String[] args)
 	{
 		ServerSocket serverSock = null;
 		Socket clientSock = null;
@@ -121,7 +118,7 @@ public class ServerL2
 			for(File fileFound : folder.listFiles()) 
 			{
 				System.out.println(fileFound);
-				if(fileFound.isDirectory()) {} 	// TODO: need to decide if we find a directory
+				if(fileFound.isDirectory()) {}
 				else
 				{
 					for(String format : formats) // for every file check if it is a video (if it ends with one the formats defined above)

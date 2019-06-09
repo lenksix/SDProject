@@ -1,8 +1,7 @@
-/*********************************
- * This class will act as a "garbage collector" for the cache 
- * we still have to decide the policy, by the way, once reached a certain timeout or a certain 
- * load of the cache this class wakes up, keeps the lock of the cache and cleans all the videos not more useful
- * according to some policy.
+/**
+ * This class will act as a "garbage collector" for the cache;
+ * once reached a certain timeout or a certain load of the cache this class wakes up, 
+ * keeps the lock of the cache and cleans all the videos outdated.
  * @author Andrea Bugin and Ilie Sarpe
  *
  */
@@ -90,15 +89,8 @@ public class CacheCleaner implements Runnable
 						}
 					}
 					
-					// check how much memory is free
-					// now the policy will be 70%-30%
-					/*
-					long first = root_dir.getTotalSpace();
-					long second = root_dir.getFreeSpace();
-					double ratio =  (double) second / first;
-					System.out.println("Ratio is <" + ratio + ">"); */
 					double free_space_percent = ((double)root_dir.getFreeSpace() /root_dir.getTotalSpace()) * 100;
-					// System.out.println("Free space is <" + free_space_percent + ">");
+					
 					if(free_space_percent > 70)
 					{
 						time_limit *= 1.5; 

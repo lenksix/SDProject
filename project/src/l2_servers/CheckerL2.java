@@ -1,5 +1,9 @@
 package l2_servers;
 
+/**
+ * Utility class to manage the request and response message according to the protocol
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class CheckerL2
 {
 	boolean result = false;

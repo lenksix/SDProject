@@ -5,17 +5,11 @@
 
 package test_Db;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-
-import database_servers.UtilitiesDb;
-
 class TestVids
 {
 	public static void main(String[] args)
 	{
+		/*
 		Cluster cluster;
 		Session session;
 
@@ -71,9 +65,10 @@ class TestVids
 				System.out.println(value); 
 			}); 
 		}
-		*/
+		
 		
 		session.close();
 		cluster.close();
+		*/
 	}
 }

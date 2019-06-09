@@ -1,5 +1,5 @@
 package rmi_servers;
-import java.rmi.*;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -9,7 +9,6 @@ import org.json.JSONObject;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,7 +31,6 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 	public String searchQuery(String query)
 	{
 		System.out.println("Executing searchQuery");
-		
 		session.execute("USE streaming;");
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -45,7 +43,6 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 		try
 		{
 			String json = mapper.writeValueAsString(queryResult);
-			//System.out.println(json);
 
 			// Trial for decoding
 			

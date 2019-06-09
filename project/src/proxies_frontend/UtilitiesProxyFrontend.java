@@ -1,5 +1,9 @@
 package proxies_frontend;
 
+/**
+ * UtilitiesProxyFrontend class: it contains few methods that are used frequently by the proxies.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class UtilitiesProxyFrontend
 {
 	/**

@@ -41,7 +41,7 @@ class TupleVid
 	
 	/**
 	 * Set the path of the Tuple
-	 * @param path
+	 * @param path the path of the tuple
 	 */
 	public void setPath(String path)
 	{
@@ -50,7 +50,7 @@ class TupleVid
 	
 	/**
 	 * Set the timestamp of the Tuple
-	 * @param timeStamp
+	 * @param timeStamp the timestamp of the tuple
 	 */
 	public void setTimeStamp(long timeStamp)
 	{

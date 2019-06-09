@@ -4,8 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -19,33 +17,41 @@ import java.util.Scanner;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-
 import rmi_servers.SessionManager;
 
+/**
+ * A thread called when a connection from the L2 servers is created. 
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 class ConnectionDbThread implements Runnable
 {
 	private Socket cliSock = null;
 	private String request = null;
 	private String response = null;
 	private String query = null;
-	private ResultSet queryResult = null;
-	//private Session session = null;
 	
 	private final static String notFound = "404 NOT FOUND";
 	private final static int CHUNK_SIZE = 1000;
 	private int rmi_port;
 	private String rmi_name;
-
+	
+	/**
+	 * Create a ConnectionDbThread
+	 * @param cliSocket the socket of the client
+	 * @param rmi_port the port of the RMI registry
+	 * @param rmi_name the name in the registry to link to
+	 */
 	public ConnectionDbThread(Socket cliSocket, int rmi_port, String rmi_name)
 	{
 		this.cliSock = cliSocket;
 		this.rmi_port = rmi_port;
 		this.rmi_name = rmi_name;
 	}
-
+	
+	/**
+	 * Manage the connection between the L2 servers and the Relational Database Manager
+	 */
+	@Override
 	public void run()
 	{
 		boolean done = false;
@@ -59,26 +65,18 @@ class ConnectionDbThread implements Runnable
 		{
 			Registry registry = LocateRegistry.getRegistry(rmi_port);
 			SessionManager server = (SessionManager) registry.lookup(rmi_name);
-	
-			try
-			{
-				clientReq = new Scanner(cliSock.getInputStream());
-				clientResp = new PrintWriter(cliSock.getOutputStream(), true);
-			} 
-			catch (IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
+
+			clientReq = new Scanner(cliSock.getInputStream());
+			clientResp = new PrintWriter(cliSock.getOutputStream(), true);
 	
 			while(!done && clientReq.hasNextLine())
 			{
 				request = clientReq.nextLine();
 	
 				// NEW PROTOCOL
-				// Remember the format of the possible requests:
-				// 1. GET SP ALL SP CHANNEL_NAME or
-				// 2. GET SP VIDEO SP URL (where URL is the url of the video)
-	
+				// Remember the format of the possible request:
+				// 1. GET SP ALL SP CHANNEL_NAME
+				
 				check = UtilitiesDb.checkQuery(request);
 				if (!check.isCorrect())
 				{
@@ -94,7 +92,6 @@ class ConnectionDbThread implements Runnable
 					// manage the response for the query to the database
 					// we have to decide the appropriate response
 					response = "";
-					String resourcePath = "";
 					String ipDb = null;
 					int portDb = -1;
 					
@@ -109,7 +106,9 @@ class ConnectionDbThread implements Runnable
 					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the
 					// result of the query
 					if(portDb == -1)
+					{
 						response = notFound;
+					}
 					else
 					{
 						rdbSocket = new Socket(ipDb, portDb); 
@@ -151,17 +150,6 @@ class ConnectionDbThread implements Runnable
 				}
 			}
 			System.out.println("Closing the connection with a server L2.");
-			try
-			{
-				clientReq.close();
-				clientResp.close();
-				cliSock.close();
-				rdbSocket.close();				
-			} 
-			catch (IOException ioe)
-			{
-				ioe.printStackTrace();
-			}
 		}
 		catch(RemoteException | NotBoundException re )
 		{
@@ -174,6 +162,20 @@ class ConnectionDbThread implements Runnable
 		catch(IOException e)
 		{
 			e.printStackTrace();
+		}
+		finally 
+		{
+			try
+			{
+				clientReq.close();
+				clientResp.close();
+				cliSock.close();
+				rdbSocket.close();				
+			} 
+			catch (IOException ioe)
+			{
+				ioe.printStackTrace();
+			}
 		}
 	}
 }

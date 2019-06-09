@@ -1,5 +1,5 @@
 /**
- * UtilitiesDb class: it contains few methods that are used frequently.
+ * UtilitiesDb class: it contains few methods that are used frequently by the database managers.
  * @author Andrea Bugin and Ilie Sarpe
  */
 
@@ -35,9 +35,9 @@ public abstract class UtilitiesDb
 	
 	
 	/**
-	 * 
-	 * @param id_vid
-	 * @return
+	 * Retrieve the ip and the port of the video in the vid_location table
+	 * @param id_vid the id of the video
+	 * @return the query string to use to retrieve the id and the port of the corresponding video
 	 */
 	public static String getLocDb(String id_vid)
 	{

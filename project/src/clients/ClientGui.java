@@ -1,18 +1,25 @@
 package clients;
 
 import java.awt.EventQueue;
-
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JButton;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
-import java.awt.event.ActionEvent;
-import javax.swing.JComboBox;
 
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+
+/**
+ * This class provides a simple user interface.
+ * The user can select a video and play it through VLC
+ * 
+ * @author Andrea Bugin ad Ilie Sarpe
+ *
+ */
 public class ClientGui
 {
 
@@ -20,9 +27,6 @@ public class ClientGui
 	private final static int PROXY_PORT = 9856;
 	private JFrame frame;
 
-	/**
-	 * Launch the application.
-	 */
 	public static void main(String[] args)
 	{
 		EventQueue.invokeLater(new Runnable()
@@ -129,6 +133,11 @@ public class ClientGui
 		frame.getContentPane().add(btnNewButton);
 	}
 	
+	/**
+	 * Read the video specified in the url
+	 * @param url the url of the video
+	 * @return true if no errors occur, false otherwise.
+	 */
 	private boolean readVideo(String url)
 	{
 		Process pr;

@@ -19,8 +19,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.sun.xml.internal.ws.addressing.ProblemAction;
-
+/**
+ * Manage the requests done by the ConnectionDbThread. According to the protocol,
+ * the requested video is retried using the path and then it is sent   
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class RDBManager implements Runnable
 {
 	private final static String notFound = "404 NOT FOUND";
@@ -38,7 +41,7 @@ public class RDBManager implements Runnable
 		(new RDBManager()).exec(args);
 	}
 	
-	public void exec(String[] args)
+	private void exec(String[] args)
 	{
 		ServerSocket serverSock = null;
 		
@@ -58,8 +61,7 @@ public class RDBManager implements Runnable
 		try
 		{
 			serverSock = new ServerSocket(DEFAULT_PORT);
-			System.out.println("Ok, Serversocket <proxy> created!");
-					
+			System.out.println("Ok, Serversocket created!");		
 		}
 		catch(IOException ioe)
 		{
@@ -67,7 +69,7 @@ public class RDBManager implements Runnable
 			ioe.printStackTrace();
 		}
 		
-		while (true)
+		while(true)
 		{
 			Socket clientSock = null;
 			try
@@ -196,7 +198,6 @@ public class RDBManager implements Runnable
 					ioe2.printStackTrace();
 				}
 			}
-			
 		}
 	}
 }

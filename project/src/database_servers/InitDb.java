@@ -1,5 +1,6 @@
 /**
- * InitDb class: it creates the database "streaming" and creates the two tables.
+ * InitDb class: it creates the NOSql database "streaming" and the two tables "ip_cache" and "vid_location".
+ * It creates also the relational database "king" and the only table "vid_path"
  * 
  * @author Andrea Bugin ad Ilie Sarpe
  *
@@ -9,9 +10,7 @@ package database_servers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
@@ -27,16 +26,6 @@ public class InitDb
 		
 		Connection conn = null;
 
-		// run cassandra in background if it is not (useful in Windows for example)
-		/*try
-		{
-			Runtime.getRuntime().exec("cassandra -f");
-		} 
-		catch (IOException ioe)
-		{
-			ioe.printStackTrace();
-		}*/
-
 		try
 		{
 			cluster = Cluster.builder().addContactPoint("127.0.0.1").build();
@@ -45,6 +34,7 @@ public class InitDb
 			// Instantiate the keyspace, with standard parameters
 			session.execute("CREATE KEYSPACE IF NOT EXISTS streaming WITH replication = {"
 					+ " 'class': 'SimpleStrategy', " + " 'replication_factor': '1' " + "};");
+			
 			// Connect to the keyspace already instatiated
 			session.execute("USE streaming;");
 			
@@ -58,37 +48,6 @@ public class InitDb
 					+ "ip text,"
 					+ "port int,"
 					+ "PRIMARY KEY(id_vid));");
-
-			//Loading database Driver
-			try
-			{
-				Class.forName("org.postgresql.Driver");
-				System.out.println("JDBC Driver for PostreSQL loaded succesfully.");
-			}
-			catch(ClassNotFoundException e)
-			{
-				e.printStackTrace();
-				System.err.println("Driver not loaded!");
-				System.exit(1);
-			}
-
-			try
-			{
-				conn = DriverManager.getConnection("jdbc:postgresql://localhost/postgres", "postgres", "postgres"); 
-				conn.createStatement().execute("CREATE DATABASE king;");
-				
-				conn = DriverManager.getConnection("jdbc:postgresql://localhost/king", "postgres", "postgres");
-				conn.createStatement().execute("CREATE TABLE vid_path(" + 
-						"	id_vid VARCHAR(100)," + 
-						"	path VARCHAR(1000) NOT NULL," + 
-						"	PRIMARY KEY(id_vid)" + 
-						");");
-			}
-			catch(SQLException e)
-			{
-				System.err.println("Something went wrong with your SQL query. Here is the exception code: \n");
-				e.printStackTrace();
-			}
 			
 			session.close();
 			cluster.close();
@@ -98,6 +57,37 @@ public class InitDb
 			System.out.println("Build failed: <" + nhae.getMessage() + ">");
 			nhae.printStackTrace();
 			System.exit(1);
+		}
+		
+		try
+		{
+			Class.forName("org.postgresql.Driver");
+			System.out.println("JDBC Driver for PostreSQL loaded succesfully.");
+		}
+		catch(ClassNotFoundException e)
+		{
+			e.printStackTrace();
+			System.err.println("Driver not loaded!");
+			System.exit(1);
+		}
+
+		try
+		{
+			conn = DriverManager.getConnection("jdbc:postgresql://localhost/postgres", "postgres", "postgres"); 
+			conn.createStatement().execute("CREATE DATABASE king;");
+			
+			conn = DriverManager.getConnection("jdbc:postgresql://localhost/king", "postgres", "postgres");
+			conn.createStatement().execute("CREATE TABLE vid_path(" + 
+					"	id_vid VARCHAR(100)," + 
+					"	path VARCHAR(1000) NOT NULL," + 
+					"	PRIMARY KEY(id_vid)" + 
+					");");
+			conn.close();
+		}
+		catch(SQLException e)
+		{
+			System.err.println("Something went wrong with your SQL query. Here is the exception code: \n");
+			e.printStackTrace();
 		}
 	}
 }

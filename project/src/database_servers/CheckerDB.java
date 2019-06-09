@@ -1,5 +1,9 @@
 package database_servers;
 
+/**
+ * Utility class to manage the request and response message according to the protocol
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class CheckerDB
 {
 	boolean result = false;
@@ -24,15 +28,22 @@ public class CheckerDB
 	}
 
 	/**
-	 * @return id of the resource if the check is correct, an error message otherwise
+	 * @return the resource if the check is correct, an error message otherwise
 	 */
 	public String getMessage()
 	{
 		return query;
 	}
 	
+	/**
+	 * @return the id of teh resource according to the protocol, an error message otherwise
+	 */
 	public String getResource()
 	{
-		return query.split(" ")[2];
+		if(isCorrect())
+		{
+			return query.split(" ")[2];
+		}
+		return query;
 	}
 }

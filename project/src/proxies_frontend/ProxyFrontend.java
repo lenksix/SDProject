@@ -1,12 +1,7 @@
 package proxies_frontend;
 
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
@@ -27,28 +22,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-
-import com.xuggle.mediatool.IMediaReader;
-import com.xuggle.mediatool.IMediaViewer;
-import com.xuggle.mediatool.IMediaWriter;
-import com.xuggle.mediatool.ToolFactory;
-import com.xuggle.xuggler.Global;
-import com.xuggle.xuggler.IContainer;
-import com.xuggle.xuggler.IContainerFormat;
-import com.xuggle.xuggler.IPacket;
-import com.xuggle.xuggler.IStream;
-import com.xuggle.xuggler.IStreamCoder;
-import com.xuggle.xuggler.IVideoPicture;
-import com.xuggle.xuggler.IVideoResampler;
-import com.xuggle.xuggler.demos.VideoImage;
-import com.xuggle.xuggler.io.DataInputOutputHandler;
-import com.xuggle.xuggler.io.XugglerIO;
-
 import javafx.util.Pair;
 
-
-
-
+/**
+ * ProxyFrontend class: it requests the given resource to the lower level of the architecture according to the protocols
+ * and it sends the url of the video, or an error message to the client
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class ProxyFrontend implements Runnable
 {
 	final static int DEFAULT_PORT = 9856;

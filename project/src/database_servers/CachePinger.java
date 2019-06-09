@@ -1,9 +1,3 @@
-/**
- * CachePinger class: it retrieves the list of active cache servers and "pings" them one by one. If a server doesn't at least one of three times
- * with a given delay of time, the CachePinger removes the pair ip-port from the ip_cache table.
- * @author Andrea Bugin and Ilie Sarpe
- */
-
 package database_servers;
 
 import java.io.IOException;
@@ -17,22 +11,27 @@ import java.rmi.registry.Registry;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.datastax.driver.core.ResultSet;
-import com.datastax.driver.core.Row;
-import com.datastax.driver.core.Session;
-
 import rmi_servers.SessionManager;
 
+/**
+ * CachePinger class: it retrieves the list of active cache servers and "pings" them one by one. If a server doesn't at least one of three times
+ * with a given delay of time, the CachePinger removes the pair ip-port from the ip_cache table.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class CachePinger extends Thread
 {
 	private static final int TIMEOUT_RESPONSE = 3000;
 	private static final int REPETITIONS = 3;
 	private static final long SLEEP_TIME = 10000L;
 	private static final long RELOAD_TIME = 100L;
-	//private Session session;
 	private int rmi_port;
 	private String rmi_name;
 	
+	/**
+	 * Creates the "pinger"
+	 * @param rmi_port the port of the RMI registry
+	 * @param rmi_name the name in the registry to link to
+	 */
 	public CachePinger(int rmi_port, String rmi_name)
 	{
 		this.rmi_port = rmi_port;
