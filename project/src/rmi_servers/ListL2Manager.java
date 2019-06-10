@@ -1,4 +1,5 @@
 package rmi_servers;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 
@@ -9,7 +10,7 @@ import javafx.util.Pair;
  * @author Andrea Bugin and Ilie Sarpe
  *
  */
-public interface ListL2Manager
+public interface ListL2Manager extends Remote
 {
 	/**
 	 * Register the server specifying its ip and its port 

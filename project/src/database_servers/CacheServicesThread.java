@@ -9,6 +9,7 @@ package database_servers;
 
 import java.io.IOException;
 import java.rmi.NotBoundException;
+import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -19,10 +20,11 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import javafx.util.Pair;
+import rmi_servers.ListL2Manager;
 import rmi_servers.SessionManager;
-import rmi_servers.SessionManagerImpl;
 
-public class CacheServicesThread extends UnicastRemoteObject implements rmi_servers.ListL2Manager
+
+public class CacheServicesThread extends UnicastRemoteObject implements ListL2Manager
 {
 	private static final String registrationOK = "210 REGISTRATION DONE";
 	private static final String registrationError = "620 REGISTRATION ERROR";
@@ -104,10 +106,10 @@ public class CacheServicesThread extends UnicastRemoteObject implements rmi_serv
 		try
 		{
 			// Binding to the RMI registry
-			SessionManager server = new SessionManagerImpl();
+			ListL2Manager server = new CacheServicesThread();
 			Registry registry = LocateRegistry.createRegistry(11300);
 			registry.rebind("ListL2Manager", server);
-			System.out.println("Binded to RMI registry, Server is Alive!");
+			System.out.println("Binded to RMI registry, Server is Alive, CST!");
 		}
 		catch(RemoteException re)
 		{
