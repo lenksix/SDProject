@@ -57,7 +57,7 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 		
 		System.err.println("Ci passo");
 		// ONLY FOR TEST--------------------------
-		mapLock.writeLock().lock();
+		/*mapLock.writeLock().lock();
 		try
 		{
 			l2Map.put("localhost", 28517); // just for test
@@ -65,7 +65,7 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 		finally 
 		{
 			mapLock.writeLock().unlock();
-		}
+		}*/
 		// ---------------------------------------
 		
 		while(true)

@@ -77,6 +77,7 @@ public class InitDb
 			conn.createStatement().execute("CREATE DATABASE king;");
 			
 			conn = DriverManager.getConnection("jdbc:postgresql://localhost/king", "postgres", "postgres");
+			
 			conn.createStatement().execute("CREATE TABLE vid_path(" + 
 					"	id_vid VARCHAR(100)," + 
 					"	path VARCHAR(1000) NOT NULL," + 

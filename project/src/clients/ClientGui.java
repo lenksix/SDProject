@@ -63,8 +63,10 @@ public class ClientGui
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		
-		JComboBox comboBox = new JComboBox();
-		comboBox.addItem("Tesserato");
+		JComboBox<String> comboBox = new JComboBox<>();
+		comboBox.addItem("docking");
+		comboBox.addItem("father");
+		comboBox.addItem("theone");
 		comboBox.setSelectedItem(null);
 		
 		comboBox.setBounds(143, 67, 189, 24);

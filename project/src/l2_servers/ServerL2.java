@@ -91,7 +91,7 @@ public class ServerL2
 		try
 		{
 			// Instantiate the server socket
-			SOCKET_PORT = 28517; // TODO: remove this is only for test
+			//SOCKET_PORT = 28517; // TODO: remove this is only for test
 			serverSock = new ServerSocket(SOCKET_PORT);
 			System.out.println("Ok, Server L2 created at " + SOCKET_PORT );
 
@@ -146,8 +146,8 @@ public class ServerL2
 			//System.exit(1);
 			
 			//***** TEST *******
-			//cc = new CacheCleaner(vidsCache, lockMap, time_limit);
-			//new Thread(cc).start();
+			cc = new CacheCleaner(vidsCache, lockMap, time_limit);
+			new Thread(cc).start();
 		} 
 		catch (IOException ioe)
 		{
@@ -292,8 +292,8 @@ public class ServerL2
 								}
 								// check if the resource is still updated 
 								// TODO: improve the way cc is accessed
-								//if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
-								if(!true)
+								//if(!true)
+								if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
 								{
 									if(VERBOSE >= 50)
 									{

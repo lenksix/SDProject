@@ -14,12 +14,6 @@ public abstract class UtilitiesDb
 	final static ArrayList<String> methods = new ArrayList<String>(Arrays.asList("GET"));
 	final static ArrayList<String> options = new ArrayList<String>(Arrays.asList("ALL", "VIDEO"));
 
-	/*
-	 * public static String createQuery(String channel, String url) { return null; }
-	 * 
-	 * public static String getResponse(ResultSet queryResult) { return null; }
-	 */
-
 	/**
 	 * To retrieve a path of a single video in the vid_path table
 	 * 
@@ -47,8 +41,7 @@ public abstract class UtilitiesDb
 
 
 	/**
-	 * To insert a new video to the vid_path table. 
-	 * NOTE: duplicate values will be overwritten because the IF NOT EXIST parameters return errors (to fix)
+	 * To insert a new video to the vid_path table.
 	 * 
 	 * @param url  the url of the video
 	 * @param path the path where the video is stored
@@ -57,8 +50,7 @@ public abstract class UtilitiesDb
 	 */
 	public static String insertUrlPath(String url, String path)
 	{
-		final String q = "INSERT INTO vid_path(url, path) VALUES ('" + url + "', '" + path + "');";
-		// + " IF NOT EXISTS;";
+		final String q = "INSERT INTO vid_path(id_vid, path) VALUES ('" + url + "', '" + path + "');";
 		return q;
 	}
 	
