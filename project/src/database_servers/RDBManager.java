@@ -162,8 +162,20 @@ public class RDBManager implements Runnable
 				}
 				else
 				{
-					ResultSet rs = conn.createStatement().executeQuery(UtilitiesDb.getPath(check.getResource()));
-					String resourcePath = rs.getString("path");
+					response = "200 OK";
+					pwClient.println(response);
+					System.out.println("check.getResource() = "  + check.getResource());
+					
+					String query = UtilitiesDb.getPath(check.getResource());
+					System.out.println(query);
+					
+					ResultSet rs = conn.createStatement().executeQuery(query);
+					String resourcePath = null;
+					
+					if(rs.next())
+						resourcePath = rs.getString("path");
+					
+					System.out.println("resourcePath = " + resourcePath);
 					
 					DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(clientSock.getOutputStream()));
 					FileInputStream fileStream = new FileInputStream(new File(resourcePath));

@@ -307,7 +307,9 @@ public class ProxyFrontend implements Runnable
 										pwClient.flush();
 										
 										// Expected STREAMING AT <URL>
-										String[] streaming = scannerCache.nextLine().split(" ");
+										String line = scannerCache.nextLine();
+										System.out.println("line = " + line);
+										String[] streaming = line.split(" ");
 										if(streaming[0].equals("STREAMING") && streaming[1].equals("AT"))
 										{
 											

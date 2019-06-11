@@ -1,4 +1,3 @@
-/*
 /**
  * The class ManageCS (Manage cache servers) is used to manage the active server cache, 
  * adding them in the database as ip-port record and ping periodically to verify how many of them are active,
@@ -7,7 +6,7 @@
  * @author Andrea Bugin and Ilie Sarpe
  */
 
-/*
+
 package database_servers;
 
 import java.io.IOException;
@@ -16,7 +15,7 @@ import java.net.Socket;
 
 public class ManageCS extends Thread
 {
-	private final static int CACHE_SERVER_MANAGER_PORT = 10000;
+	private final static int CACHE_SERVER_MANAGER_PORT = 26495;
 	//private Session session = null;
 	private int rmi_port;
 	private String rmi_name;
@@ -36,7 +35,7 @@ public class ManageCS extends Thread
 		//session.execute("USE streaming;");
 		
 		//------------------- for test purpose, just to create some records in the table.
-		String q = UtilitiesDb.insertIPCache("192.168.1.1", 12345);
+		/*String q = UtilitiesDb.insertIPCache("192.168.1.1", 12345);
 		session.execute(q);
 		
 		q = UtilitiesDb.insertIPCache("192.168.1.1", 12346);
@@ -54,7 +53,7 @@ public class ManageCS extends Thread
 		rSet.forEach(row -> System.out.println(row.getString("ip") + " " + row.getInt("port")));
 		
 		//------------------------------------------------------------------------------------------
-		
+		*/
 		try
 		{
 			// Instantiate the server socket
@@ -67,7 +66,7 @@ public class ManageCS extends Thread
 		}
 		
 		// starting the cache pinger
-		// TODO: dofificare il costruttore che non avrà più bisogno della session
+		// TODO: mofificare il costruttore che non avrà più bisogno della session
 		CachePinger cachePingerThread = new CachePinger(rmi_port, rmi_name);
 		cachePingerThread.start();
 		
@@ -104,4 +103,3 @@ public class ManageCS extends Thread
 		}	
 	}
 }
-*/

@@ -1,45 +1,55 @@
 package database_servers;
 
-import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Scanner;
+
+import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.Session;
 
 /**
  * Utility class to populate the relational database using an external file (media//populate_db//entry1.txt in this case)
  * @author Andrea Bugin and Ilie Sarpe
  */
 public class PopulateDb
-{	
+{
 	public static void main(String args[])
 	{
-		String filePop = "entry1"; 
+		final String clusterAdd = "127.0.0.1";
+		String filePop = "entry1";
+		
 		try(Connection conn = DriverManager.getConnection("jdbc:postgresql://localhost/king", "postgres", "postgres");
-			BufferedReader reader = new BufferedReader(new FileReader("media//populate_db//" + filePop));)
+			Scanner scan = new Scanner(new FileReader("media//populate_db//" + filePop));
+			Cluster cluster = Cluster.builder().addContactPoint(clusterAdd).build();
+			Session session = cluster.connect();)
 		{
-			String currentLine = reader.readLine().trim();
+			session.execute("USE streaming;");
 			
-			if(currentLine != null)
+			String currentLine = scan.nextLine();
+			if(!currentLine.equals("vid_path"))
 			{
-				if(currentLine.equals("vid_path"))
-				{
-					while((currentLine = reader.readLine()) != null)
-					{
-						String query = UtilitiesDb.insertUrlPath(currentLine.split(" ")[0].trim(), currentLine.split(" ")[1].trim());
-						conn.createStatement().execute(query);
-						System.out.println(query);
-					}
-				}
-				else
-				{
-					System.out.println("Table not supported!");
-				}
+				System.out.println("Table not supported!");
 			}
-			else
+			while(scan.hasNextLine())//(currentLine = scan.readLine()) != null)
 			{
-				System.out.println("Format not respected!");
+				String line = scan.nextLine();
+				String[] lineArray = line.split(" ");
+				
+				String id_vid = lineArray[0];
+				String path_vid = lineArray[1];
+				String ip = lineArray[2];
+				int port = Integer.parseInt(lineArray[3]);
+				
+				String query = UtilitiesDb.insertUrlPath(id_vid, path_vid);
+				System.out.println(query);
+				//conn.createStatement().execute(query);
+				
+				query = UtilitiesDb.insertLocDb(id_vid, ip, port);
+				session.execute(query);
+				System.out.println(query);
 			}
 		}
 		catch(SQLException sqle) 

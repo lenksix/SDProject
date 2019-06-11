@@ -36,6 +36,9 @@ public class ManageDb
 			ioe.printStackTrace();
 		}
 		
+		CachePinger cachePingerThread = new CachePinger(RMI_PORT, RMI_NAME);
+		cachePingerThread.start();
+		
 		try 
 		{
 			while(true)

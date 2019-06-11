@@ -74,13 +74,13 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 			{
 				Thread.currentThread();
 				Thread.sleep(SLEEP);
-				System.out.println("I am awake");
+				//System.out.println("I am awake");
 				try
 				{
 					Registry registry = LocateRegistry.getRegistry(RMI_REGISTER_SERVICE_PORT);
 					ListL2Manager server = (ListL2Manager) registry.lookup(RMI_REGISTER_SERVICE_NAME);
 					servers = server.listServers();
-					System.out.println("Free the map" + Thread.currentThread().getId());
+					//System.out.println("Free the map" + Thread.currentThread().getId());
 					mapLock.writeLock().lock();
 					try
 					{
@@ -88,7 +88,7 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 						for(Pair<String, Integer> serv : servers)
 						{
 							l2Map.put(serv.getKey(), serv.getValue());
-							System.out.println("updated + < " + serv.getKey() + " > and < " + serv.getValue() + " >");
+							//System.out.println("updated + < " + serv.getKey() + " > and < " + serv.getValue() + " >");
 						}
 						
 					}

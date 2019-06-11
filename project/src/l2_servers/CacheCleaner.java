@@ -69,7 +69,7 @@ public class CacheCleaner implements Runnable
 							entry.getValue().getValue().writeLock().lock();
 							
 							long insert_time = entry.getValue().getKey().getTimeStamp();
-							System.out.println("Rresource is in cache from : <" + (System.currentTimeMillis() - insert_time) + ">");
+							//System.out.println("Resource is in cache from : <" + (System.currentTimeMillis() - insert_time) + ">");
 							if((insert_time < System.currentTimeMillis()-time_limit))
 							{
 								updated = false;

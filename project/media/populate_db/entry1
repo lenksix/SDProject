@@ -1,4 +1,4 @@
 vid_path
-docking media//media_db//docking.mp4
-father media//media_db//father.mp4
-theone media//media_db//theone.mp4
+docking media//media_db//docking.mp4 localhost 13222
+father media//media_db//father.mp4 localhost 13222
+theone media//media_db//theone.mp4 localhost 13222

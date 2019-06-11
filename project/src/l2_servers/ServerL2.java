@@ -91,7 +91,7 @@ public class ServerL2
 		try
 		{
 			// Instantiate the server socket
-			//SOCKET_PORT = 28517; // TODO: remove this is only for test
+			SOCKET_PORT = 28517; // TODO: remove this is only for test
 			serverSock = new ServerSocket(SOCKET_PORT);
 			System.out.println("Ok, Server L2 created at " + SOCKET_PORT );
 
@@ -290,8 +290,7 @@ public class ServerL2
 								{
 									System.out.println("Already accessed map for resource: <" + check.getResource() + ">");
 								}
-								// check if the resource is still updated 
-								// TODO: improve the way cc is accessed
+								// check if the resource is still updated
 								//if(!true)
 								if (!(resource.getKey().getTimeStamp() + cc.getTimeLimit() > System.currentTimeMillis())) 
 								{
@@ -486,7 +485,7 @@ public class ServerL2
 											lockResource.writeLock().unlock();
 										}
 										
-										// Now that i hve already updated the resource i can send the video
+										// Now that i have already updated the resource i can send the video
 										lockResource.readLock().lock();
 										try
 										{

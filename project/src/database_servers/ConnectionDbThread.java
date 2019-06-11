@@ -75,19 +75,18 @@ class ConnectionDbThread implements Runnable
 	
 				// NEW PROTOCOL
 				// Remember the format of the possible request:
-				// 1. GET SP ALL SP CHANNEL_NAME
+				// 1. GET SP VIDEO SP ID_VIDEO
 				
 				check = UtilitiesDb.checkQuery(request);
 				if (!check.isCorrect())
 				{
-					response = check.getMessage();
+					response = check.getResource();
 					clientResp.println(response);
 				} 
 				else
 				{
-					query = check.getMessage();
-					System.out.println(query);
-					String json = server.searchQuery(query);
+					query = check.getResource();
+					String json = server.searchQuery(UtilitiesDb.getLocDb(query));
 	
 					// manage the response for the query to the database
 					// we have to decide the appropriate response
@@ -102,12 +101,17 @@ class ConnectionDbThread implements Runnable
 						ipDb = jsonObj.getString("ip");
 						portDb = jsonObj.getInt("port");
 					}
+					
+					//System.out.println("array = " + array);
+					//System.out.println("ip = " + ipDb + ", port = " + portDb);
+					
 	
 					// if the query has no results 404 NOT FOUND is sent, else 200 OK plus the
 					// result of the query
 					if(portDb == -1)
 					{
 						response = notFound;
+						clientResp.println(response);
 					}
 					else
 					{
@@ -170,7 +174,8 @@ class ConnectionDbThread implements Runnable
 				clientReq.close();
 				clientResp.close();
 				cliSock.close();
-				rdbSocket.close();				
+				if(rdbSocket != null)
+					rdbSocket.close();
 			} 
 			catch (IOException ioe)
 			{

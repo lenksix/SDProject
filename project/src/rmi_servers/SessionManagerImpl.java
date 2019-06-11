@@ -4,9 +4,6 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
-import org.json.JSONArray;
-import org.json.JSONObject;
-
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
@@ -30,7 +27,7 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 	@Override
 	public String searchQuery(String query)
 	{
-		System.out.println("Executing searchQuery");
+		//System.out.println("Executing searchQuery");
 		session.execute("USE streaming;");
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -45,7 +42,7 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 			String json = mapper.writeValueAsString(queryResult);
 
 			// Trial for decoding
-			
+			/*
 			JSONArray array = new JSONArray(json);
 			System.out.println("Size is " + array.length());
 			for (int i = 0; i < array.length(); i++)
@@ -55,6 +52,7 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 				System.out.println(jsonObj.getString("ip"));
 				System.out.println(jsonObj.getInt("port"));
 			}
+			*/
 			return json;
 
 		} catch (JsonProcessingException e)
@@ -67,7 +65,7 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 	@Override
 	public int registerQuery(String query)
 	{
-		System.out.println("Executing registerQuery");
+		//System.out.println("Executing registerQuery");
 		try
 		{
 			session.execute("USE streaming;");
@@ -85,7 +83,7 @@ public class SessionManagerImpl extends UnicastRemoteObject implements SessionMa
 	@Override
 	public int deleteQuery(String query)
 	{
-		System.out.println("Executing deleteQuery");
+		//System.out.println("Executing deleteQuery");
 		return registerQuery(query);
 	}
 	

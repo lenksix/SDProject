@@ -38,6 +38,19 @@ public abstract class UtilitiesDb
 		final String q = "SELECT ip, port FROM vid_location WHERE id_vid = '" + id_vid + "';";
 		return q;
 	}
+	
+	/**
+	 * Insert the id of a video and the ip and the port of the server which owns that video in the vid_location table
+	 * @param id_vid the id of the video
+	 * @param ip the ip of the server
+	 * @param port the port of the server
+	 * @return the query string to use to insert the new video into the vid_location table
+	 */
+	public static String insertLocDb(String id_vid, String ip, int port)
+	{
+		final String q = "INSERT INTO vid_location(id_vid, ip, port) VALUES ('" + id_vid + "', '" + ip + "', " + port + ");";
+		return q;
+	}
 
 
 	/**
@@ -133,7 +146,7 @@ public abstract class UtilitiesDb
 						{
 							if (j == 1)
 							{ // GET SP VIDEO SP ID_VIDEO
-								return new CheckerDB(true, UtilitiesDb.getLocDb(args[NUMARGS - 1]));
+								return new CheckerDB(true, args[NUMARGS - 1]);
 							}
 						}
 					}
