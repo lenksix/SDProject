@@ -109,7 +109,6 @@ public class ClientGui
 							String[] chunks = line.split(" ");
 							if(chunks[0].equals("LINK") && chunks[1].equals("AT"))
 							{
-								
 								String url = chunks[2];
 								System.err.println("launching read video on: "  + url);
 								readVideo(url);
@@ -145,14 +144,22 @@ public class ClientGui
 		Process pr;
 		try
 		{
-			Runtime rt = Runtime.getRuntime();
+			ProcessBuilder pb = new ProcessBuilder();
+			//Runtime rt = Runtime.getRuntime();
 			String command = "vlc " + url;
-			pr = rt.exec(new String[]{"bash","-c",command});
+			pb.command("bash","-c",command); // = rt.exec(new String[]{});
+			Thread.currentThread();
+			Thread.sleep(0);
+			pb.start();
 		}
 		catch(IOException ioe)
 		{
 			ioe.printStackTrace();
 			return false;
+		}
+		catch (InterruptedException e)
+		{
+			e.printStackTrace();
 		}
 		return true;
 	}

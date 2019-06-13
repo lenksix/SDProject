@@ -110,8 +110,8 @@ public class ManageCacheList extends UnicastRemoteObject implements rmi_servers.
 				ie.printStackTrace();
 			}
 		}
+		//*/
 	}
-
 	
 	@Override
 	public HashMap<String, Integer> getListL2() throws RemoteException

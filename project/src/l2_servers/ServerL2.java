@@ -164,7 +164,6 @@ public class ServerL2
 		}
 		
 		// I have to register this server on the ip_cache table
-		
 		try
 		{
 			Registry registry = LocateRegistry.getRegistry(RMI_REGISTER_SERVICE_PORT);
@@ -268,13 +267,13 @@ public class ServerL2
 						{
 							// Verify if the cache contains the resource
 							// Brand new Section!!
-							System.err.println("Ci passo 1");
+							//System.err.println("Ci passo 1");
 							lockMap.lock();
 							try
 							{
 								if(!vidsCache.containsKey(check.getResource()))
 								{
-									System.err.println("Ci passo 2");
+									//System.err.println("Ci passo 2");
 									if(VERBOSE >= 50)
 									{
 										System.out.println("The resource: <" + check.getResource() + "> is not in cache");
@@ -333,7 +332,7 @@ public class ServerL2
 								//Now that i have the read lock and I know file is readable, I can send the file!
 								pwClient.println("200 OK");
 								pwClient.flush();
-								System.err.println("Ci passo 3");
+								//System.err.println("Ci passo 3");
 								
 								String url = createUrl(STREAM_PORT, videoCachePath);
 								pwClient.println("STREAMING AT " + url);
@@ -422,7 +421,7 @@ public class ServerL2
 											//Now that i have the read lock and I know file is readable, I can send the file!
 											pwClient.println("200 OK");
 											pwClient.flush();
-											System.err.println("Ci passo 4");
+											//System.err.println("Ci passo 4");
 											
 											String url = createUrl(STREAM_PORT, videoCachePath);
 											pwClient.println("STREAMING AT " + url);
@@ -529,8 +528,8 @@ public class ServerL2
 									{
 										ReentrantReadWriteLock rwlRes;
 										
-										pwClient.println(response);
-										pwClient.flush();
+										//pwClient.println(response);
+										//pwClient.flush();
 										DataInputStream dis = null;
 										FileOutputStream fos = null;
 										String path = cache_default_path + check.getResource() ;
@@ -572,12 +571,12 @@ public class ServerL2
 											pwClient.println("200 OK");
 											pwClient.flush();
 											
-											String url = createUrl(STREAM_PORT, videoCachePath);
+											String url = createUrl(STREAM_PORT, path);
 											pwClient.println("STREAMING AT " + url);
 											pwClient.flush();
 											
 											// stream the video
-											if(!sendVideo(videoCachePath))
+											if(!sendVideo(path))
 											{
 												System.err.println("Error in sending the video from brand new cache");
 											}
@@ -629,7 +628,9 @@ public class ServerL2
 	{
 		String[] chunks = path.split("/");
 		String id = chunks[chunks.length - 1]; // ID of the video
-		return "http://localhost:" + STREAM_PORT + "/" + id;
+		//String str = "http://localhost:" + STREAM_PORT + "/" + id;
+		String str = "rtsp://localhost:" + STREAM_PORT + "/" + id;
+		return str;
 	}
 	
 	private boolean sendVideo(String videoPath)
@@ -641,8 +642,13 @@ public class ServerL2
 			String id = chunks[chunks.length - 1]; // ID of the video
 			Runtime rt = Runtime.getRuntime();
 			
-			String command = "cvlc -vvv " + videoPath + " --sout '#transcode{vcodec=h264,acodec=mp3,samplerate44100}:std{access=http,mux=ffmpeg{mux=flv},dst=localhost:"
-					+ STREAM_PORT + "/" + id +"}'";
+			//String command = "cvlc -vvv " + videoPath + " --sout '#transcode{vcodec=h264,acodec=mp3,samplerate=44100}:std{access=http,mux=mp4,dst=localhost:"
+			//		+ STREAM_PORT + "/" + id +"}'";
+			
+			String command = "cvlc -vvv " + videoPath 
+					+ " --sout '#rtp{dst=192.168.0.12,port=1234,sdp=rtsp://localhost:" 
+					+ STREAM_PORT + "/" + id + "}'";
+			
 			System.err.println("Creating the stream\n" + command);
 			pr = rt.exec(new String[]{"bash","-c",command});
 		}

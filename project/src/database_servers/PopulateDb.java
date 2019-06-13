@@ -45,7 +45,7 @@ public class PopulateDb
 				
 				String query = UtilitiesDb.insertUrlPath(id_vid, path_vid);
 				System.out.println(query);
-				//conn.createStatement().execute(query);
+				conn.createStatement().execute(query);
 				
 				query = UtilitiesDb.insertLocDb(id_vid, ip, port);
 				session.execute(query);
