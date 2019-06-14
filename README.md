@@ -9,8 +9,8 @@ to the frontend side. It employs services as Cassandra, PostgreSQL and java RMI.
 
 ## Installation
 Several depencesied are required. The simpliest way to install the application is the following one.
-Get [cassandra portable](http://cassandra.apache.org/download/).
-Get [PostgresSQL](https://www.postgresql.org/download/) and configure it on your operating system.
-Install the last version of [eclipse](https://www.eclipse.org/downloads/) and configure it with the [JDK 1.8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). 
-As last thing install [VLC](https://www.videolan.org/vlc/index.it.html) on your device.
+1. Get [cassandra portable](http://cassandra.apache.org/download/).
+1. Get [PostgresSQL](https://www.postgresql.org/download/) and configure it on your operating system.
+1. Install the last version of [eclipse](https://www.eclipse.org/downloads/) and configure it with the [JDK 1.8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). 
+1. As last thing install [VLC](https://www.videolan.org/vlc/index.it.html) on your device.
 Now you are ready to execute the application.
