@@ -11,7 +11,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
-
+/**
+ * This class is the only known implementation of the interface SessionManager.
+ * It instantiates the cluster and session objects and Cassandra.
+ * Offers the functionalities of querying, reading and deleting on database as remote methods.
+ * @author Andrea Bugin and Ilie Sarpe
+ *
+ */
 public class SessionManagerImpl extends UnicastRemoteObject implements SessionManager
 {
 	private static final String clusterAdd = "127.0.0.1";

@@ -1,10 +1,3 @@
-/**
- * CacheServicesThread class: it manages requests from cache servers or proxies. In the first case the only allowed request is the registration
- * in the ip_cache table because the server is online; on the other hand when the request comes from a proxy, it receives the list of active cache 
- * servers, retrieved from the ip_cache table. All the requests and the responses are handled by appropriate protocols.
- * @author Andrea Bugin and Ilie Sarpe
- */
-
 package database_servers;
 
 import java.io.IOException;
@@ -23,7 +16,12 @@ import javafx.util.Pair;
 import rmi_servers.ListL2Manager;
 import rmi_servers.SessionManager;
 
-
+/**
+ * CacheServicesThread class: it manages requests from cache servers or proxies. In the first case the only allowed request is the registration
+ * in the ip_cache table because the server is online; on the other hand when the request comes from a proxy, it receives the list of active cache 
+ * servers, retrieved from the ip_cache table. All the requests and the responses are handled by appropriate protocols.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class CacheServicesThread extends UnicastRemoteObject implements ListL2Manager
 {
 	private static final String registrationOK = "210 REGISTRATION DONE";

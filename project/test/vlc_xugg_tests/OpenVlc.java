@@ -1,4 +1,4 @@
-package clients;
+package vlc_xugg_tests;
 
 import java.io.BufferedReader;
 import java.io.IOException;

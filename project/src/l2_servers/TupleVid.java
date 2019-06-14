@@ -1,10 +1,9 @@
+package l2_servers;
+
 /**
  * TupleVid class: a simple class to store the path of a video and his timestamp in milliseconds. It's used to manage the cache.
  * @author Andrea Bugin and Ilie Sarpe
  */
-
-package l2_servers;
-
 class TupleVid
 {
 	private String path;	// TODO: decide if the path must be final 

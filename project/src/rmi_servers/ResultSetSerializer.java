@@ -13,6 +13,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
+/**
+ * This class is an utility for serializing a Cassandra ResultSet to a JSON string.
+ * This is used as a marshaling phase, since for RMI functionality we need the result to be Serializable.
+ * @author Andrea Bugin and Ilie Sarpe
+ *
+ */
 @SuppressWarnings("serial")
 public class ResultSetSerializer extends StdSerializer<ResultSet>
 {

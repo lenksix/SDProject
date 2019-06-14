@@ -1,11 +1,3 @@
-/**
- * This class will act as a "garbage collector" for the cache;
- * once reached a certain timeout or a certain load of the cache this class wakes up, 
- * keeps the lock of the cache and cleans all the videos outdated.
- * @author Andrea Bugin and Ilie Sarpe
- *
- */
-
 package l2_servers;
 
 import java.io.File;
@@ -17,7 +9,13 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javafx.util.Pair;
-
+/**
+ * This class will act as a "garbage collector" for the cache;
+ * once reached a certain timeout or a certain load of the cache this class wakes up, 
+ * keeps the lock of the cache and cleans all the videos outdated.
+ * @author Andrea Bugin and Ilie Sarpe
+ *
+ */
 public class CacheCleaner implements Runnable
 {
 	private static final int VERBOSE = 50;

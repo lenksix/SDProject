@@ -1,14 +1,12 @@
-/**
- * ManageDb class: it manage the request from clients and perform the query to the database sending the response using the protocol developed
- * @author Andrea Bugin and Ilie Sarpe
- */
-
 package database_servers;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-
+/**
+ * ManageDb class: it manage the request from clients and perform the query to the database sending the response using the protocol developed
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class ManageDb
 {
 	private static final int SOCKETPORT = 8765;
