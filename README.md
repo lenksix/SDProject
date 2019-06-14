@@ -25,13 +25,13 @@ cassandra -f
 1. Check if *vlc* and *cvlc* are available from your bash/shell command line.
 
 Once these steps are performing you just need to run the classes in the right order.
-2. InitDb
-2. PopulateDB
-2. RDBManager
-2. SessionManagerImpl 
-2. CacheServicesThread
-2. ManageDb
-2. ServerL2
-2. ManageCacheList
-2. ProxyFrontend
-2. ClientGui
+1. InitDb
+1. PopulateDB
+1. RDBManager
+1. SessionManagerImpl 
+1. CacheServicesThread
+1. ManageDb
+1. ServerL2
+1. ManageCacheList
+1. ProxyFrontend
+1. ClientGui
