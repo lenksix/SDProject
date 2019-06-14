@@ -652,6 +652,10 @@ public class ServerL2
 					+ " --sout '#rtp{dst=192.168.0.12,port=1234,sdp=rtsp://localhost:" 
 					+ STREAM_PORT + "/" + id + "}'";
 			
+			command = "cvlc -vvv " + videoPath 
+					+ " --sout '#rtp{dst=localhost,port=41000,sdp=rtsp://localhost:" 
+					+ STREAM_PORT + "/" + id + "}'";
+			
 			System.err.println("Creating the stream\n" + command);
 			pr = rt.exec(new String[]{"bash","-c",command});
 		}
