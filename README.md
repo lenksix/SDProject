@@ -14,3 +14,14 @@ Several depencesied are required. The simpliest way to install the application i
 1. Install the last version of [eclipse](https://www.eclipse.org/downloads/) and configure it with the [JDK 1.8](https://www.oracle.com/technetwork/java/javase/downloads/jdk8-downloads-2133151.html). 
 1. As last thing install [VLC](https://www.videolan.org/vlc/index.it.html) on your device.
 Now you are ready to execute the application.
+
+## Usage 
+In order to use the application you will need to respect the following procedure.
+1. Check that Postrgres and cassandra are running on your machine e.g. if not you can start cassandra with 
+```bash
+cassandra -f
+```
+1. Import the SDProject on eclipse. It may take a while to configure the workspace since a lot of packages are needed.
+1. Chech if *vlc* and *cvlc* are available from your bash/shell command line.
+<a/> Once these steps are performing you just need to run the classes in the right order.
+1. 
