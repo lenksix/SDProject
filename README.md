@@ -23,7 +23,7 @@ cassandra -f
 ```
 1. Import the SDProject on eclipse. It may take a while to configure the workspace since a lot of packages are needed.
 1. Check if *vlc* and *cvlc* are available from your bash/shell command line.
-<a/> Once these steps are performing you just need to run the classes in the right order.
+[//]: Once these steps are performing you just need to run the classes in the right order.
 1. InitDb
 1. PopulateDB
 1. RDBManager
