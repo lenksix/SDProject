@@ -1,11 +1,3 @@
-/**
- * InitDb class: it creates the NOSql database "streaming" and the two tables "ip_cache" and "vid_location".
- * It creates also the relational database "king" and the only table "vid_path"
- * 
- * @author Andrea Bugin ad Ilie Sarpe
- *
- */
-
 package database_servers;
 
 import java.sql.Connection;
@@ -17,6 +9,13 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
 
 /* creates the table we need for querying the urls */
+/**
+ * InitDb class: it creates the NOSql database "streaming" and the two tables "ip_cache" and "vid_location".
+ * It creates also the relational database "king" and the only table "vid_path"
+ * 
+ * @author Andrea Bugin ad Ilie Sarpe
+ *
+ */
 public class InitDb
 {
 	public static void main(String[] args)

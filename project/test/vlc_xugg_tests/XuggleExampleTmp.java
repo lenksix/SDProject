@@ -1,4 +1,4 @@
-package clients;
+package vlc_xugg_tests;
 
 import com.xuggle.mediatool.IMediaReader;
 import com.xuggle.mediatool.IMediaViewer;

@@ -1,9 +1,3 @@
-/**
- * Server Cache class: it manages the requests of the proxies. When there is a proxy request, according to the protocol, 
- * it retrieve the given video from the database, with a request to the ManageDb, or from the cache if the resource is update.
- * @author Andrea Bugin and Ilie Sarpe
- */
-
 package l2_servers;
 
 import java.io.BufferedInputStream;
@@ -33,7 +27,11 @@ import org.apache.commons.io.FilenameUtils;
 
 import javafx.util.Pair;
 import rmi_servers.ListL2Manager;
-
+/**
+ * Server Cache class: it manages the requests of the proxies. When there is a proxy request, according to the protocol, 
+ * it retrieve the given video from the database, with a request to the ManageDb, or from the cache if the resource is update.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public class ServerL2
 {
 	private static int dbPort = -1;

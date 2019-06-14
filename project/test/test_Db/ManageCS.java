@@ -7,11 +7,13 @@
  */
 
 
-package database_servers;
+package test_Db;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+
+import database_servers.CachePinger;
 
 public class ManageCS extends Thread
 {

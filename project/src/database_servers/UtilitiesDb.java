@@ -1,13 +1,11 @@
-/**
- * UtilitiesDb class: it contains few methods that are used frequently by the database managers.
- * @author Andrea Bugin and Ilie Sarpe
- */
-
 package database_servers;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
+/**
+ * UtilitiesDb class: it contains few methods that are used frequently by the database managers.
+ * @author Andrea Bugin and Ilie Sarpe
+ */
 public abstract class UtilitiesDb
 {
 	final static int NUMARGS = 3;
