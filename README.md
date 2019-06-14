@@ -35,3 +35,5 @@ Once these steps are performing you just need to run the classes in the right or
 1. ManageCacheList
 1. ProxyFrontend
 1. ClientGui
+
+Alternatively you may want to create a launch group on eclipse respecting the order above, so with just one run you will be able to run all those classes
