@@ -22,6 +22,15 @@ In order to use the application you will need to respect the following procedure
 cassandra -f
 ```
 1. Import the SDProject on eclipse. It may take a while to configure the workspace since a lot of packages are needed.
-1. Chech if *vlc* and *cvlc* are available from your bash/shell command line.
+1. Check if *vlc* and *cvlc* are available from your bash/shell command line.
 <a/> Once these steps are performing you just need to run the classes in the right order.
-1. 
+1. InitDb
+1. PopulateDB
+1. RDBManager
+1. SessionManagerImpl 
+1. CacheServicesThread
+1. ManageDb
+1. ServerL2
+1. ManageCacheList
+1. ProxyFrontend
+1. ClientGui
