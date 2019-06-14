@@ -36,4 +36,4 @@ Once these steps are performing you just need to run the classes in the right or
 1. ProxyFrontend
 1. ClientGui
 
-Alternatively you may want to create a launch group on eclipse respecting the order above, so with just one run you will be able to run all those classes
+Alternatively you may want to create a launch group on eclipse respecting the order above, so with just one run you will be able to run all those classes, see the [eclipse documentation](https://help.eclipse.org/kepler/index.jsp?topic=%2Forg.eclipse.cdt.doc.user%2Freference%2Fcdt_u_run_dbg_launch_group.htm) for further details.
