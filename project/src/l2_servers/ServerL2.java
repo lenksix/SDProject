@@ -493,14 +493,15 @@ public class ServerL2
 											pwClient.flush();
 											
 											String url = createUrl(STREAM_PORT, videoCachePath);
+											sendVideo(videoCachePath);
 											pwClient.println("STREAMING AT " + url);
 											pwClient.flush();
 											
 											// stream the video
-											if(!sendVideo(videoCachePath))
+											/*if(!)
 											{
 												System.err.println("Error in sending the video from brand new cache");
-											}
+											}*/
 										}
 										finally
 										{
@@ -571,15 +572,19 @@ public class ServerL2
 											pwClient.println("200 OK");
 											pwClient.flush();
 											
+											System.out.println("Path = " + path);
+											path += ".mp4";
 											String url = createUrl(STREAM_PORT, path);
+											sendVideo(path);
 											pwClient.println("STREAMING AT " + url);
+											System.out.println("Url = " + url);
 											pwClient.flush();
 											
 											// stream the video
-											if(!sendVideo(path))
+											/*if(!sendVideo(path))
 											{
 												System.err.println("Error in sending the video from brand new cache");
-											}
+											}*/
 										}
 										finally
 										{
